@@ -1,6 +1,11 @@
+const PIXEL_RATIO = 1;
+
 const canvas = document.createElement('canvas');
-canvas.width = document.documentElement.clientWidth;
-canvas.height = document.documentElement.clientHeight;
+canvas.width = document.documentElement.clientWidth * PIXEL_RATIO;
+canvas.height = document.documentElement.clientHeight * PIXEL_RATIO;
+canvas.style.width = canvas.width / PIXEL_RATIO + 'px';
+canvas.style.height = canvas.height / PIXEL_RATIO + 'px';
+canvas.style.imageRendering = 'pixelated';
 document.body.appendChild(canvas);
 
 const fps = document.createElement('div');
@@ -25,16 +30,16 @@ export function addWidget(widget) {
 
 let lastTime = Date.now();
 
+const context = canvas.getContext('2d');
+
 function render() {
   const now = Date.now();
   const delta = now - lastTime;
   lastTime = now;
 
-  const ctx = canvas.getContext('2d');
-
   for (let i = 0; i < widgets.length; i++) {
     const widget = widgets[i];
-    widget.render(ctx);
+    widget.render(context);
   }
 
   // update fps

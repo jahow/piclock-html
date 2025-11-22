@@ -2,6 +2,7 @@
  * @typedef {Object} Symbol
  * @property {number[]} pixels
  * @property {number} width
+ * @property {number} height
  */
 
 /**
@@ -25,6 +26,7 @@ function processSymbol(symbolAsStrings) {
   return {
     pixels,
     width: symbolWidth,
+    height: symbolAsStrings.length,
   };
 }
 
