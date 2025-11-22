@@ -45,11 +45,20 @@ class MatrixState {
         this.pixelChanged[matrixIndex] = true;
         this.anyPixelChanged = true;
 
+        const difference = targetValue - currentValue;
         if (currentValue < targetValue) {
-          this.pixels[matrixIndex] = Math.min(currentValue + 0.2, 1);
+          this.pixels[matrixIndex] = Math.min(
+            currentValue + difference * 0.25,
+            1,
+          );
         } else if (currentValue > targetValue) {
-          this.pixels[matrixIndex] = Math.max(currentValue - 0.05, 0);
+          this.pixels[matrixIndex] = Math.max(
+            currentValue + difference * 0.125,
+            0,
+          );
         }
+        if (this.pixels[matrixIndex] < 0.01) this.pixels[matrixIndex] = 0;
+        if (this.pixels[matrixIndex] > 0.99) this.pixels[matrixIndex] = 1;
       }
     }
   }
@@ -117,7 +126,7 @@ export const clockWidget = {
         if (!matrixState.pixelChanged[j]) continue;
 
         const ratio = matrixState.pixels[j];
-        const value = Math.round((0.15 + ratio * 0.85) * 100);
+        const value = Math.round((0.05 + ratio * 0.95) * 100);
 
         const offsetX =
           baseX + (j % matrixState.width) * (DOT_SIZE_PX + DOT_SPACING_PX);
@@ -128,20 +137,20 @@ export const clockWidget = {
         context.fillRect(offsetX, offsetY, DOT_SIZE_PX, DOT_SIZE_PX);
 
         const fullRadius = DOT_SIZE_PX / 2;
-        const smallRadius = DOT_SIZE_PX / 10;
+        const smallRadius = fullRadius;
+        const radius = smallRadius + (fullRadius - smallRadius) * ratio;
 
         context.fillStyle = `hsl(0, 0%, ${value}%)`;
         context.beginPath();
-        context.ellipse(
-          offsetX + fullRadius,
-          offsetY + fullRadius,
-          smallRadius + (fullRadius - 0.5 - smallRadius) * ratio,
-          fullRadius - 0.5,
-          Math.PI * 0.25,
-          0,
-          Math.PI * 2,
+        context.roundRect(
+          offsetX + fullRadius - radius,
+          offsetY + fullRadius - radius,
+          radius * 2,
+          radius * 2,
+          2,
         );
         context.fill();
+        console.log('drawing dot');
       }
     }
 
