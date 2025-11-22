@@ -1,0 +1,18 @@
+{
+  "name": "html-clock",
+  "version": "1.0.0",
+  "description": "a html clock",
+  "main": "index.js",
+  "author": "jahow",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "prettier": "3.6.2",
+    "vite": "^7.2.4"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
