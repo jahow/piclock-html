@@ -90,6 +90,8 @@ const DOT_SIZE_PX = 8;
 const DOT_SPACING_PX = 2;
 const TOTAL_WIDTH_PX = matrixState.width * (DOT_SIZE_PX + DOT_SPACING_PX);
 
+const DOT_COLOR = 'hsl(35,84%,60%)';
+
 /**
  * @type {Widget}
  */
@@ -126,7 +128,6 @@ export const clockWidget = {
         if (!matrixState.pixelChanged[j]) continue;
 
         const ratio = matrixState.pixels[j];
-        const value = Math.round((0.05 + ratio * 0.95) * 100);
 
         const offsetX =
           baseX + (j % matrixState.width) * (DOT_SIZE_PX + DOT_SPACING_PX);
@@ -140,7 +141,9 @@ export const clockWidget = {
         const smallRadius = fullRadius;
         const radius = smallRadius + (fullRadius - smallRadius) * ratio;
 
-        context.fillStyle = `hsl(0, 0%, ${value}%)`;
+        const value = Math.round((0.05 + ratio * 0.95) * 82);
+        context.fillStyle = `hsl(47, 84%, ${value}%)`;
+        // context.fillStyle = DOT_COLOR;
         context.beginPath();
         context.roundRect(
           offsetX + fullRadius - radius,

@@ -32,6 +32,16 @@ let lastTime = Date.now();
 
 const context = canvas.getContext('2d');
 
+const drawCanvas = document.createElement('canvas');
+drawCanvas.width = canvas.width;
+drawCanvas.height = canvas.height;
+const drawContext = drawCanvas.getContext('2d');
+
+const blurCanvas = document.createElement('canvas');
+blurCanvas.width = canvas.width * 0.2;
+blurCanvas.height = canvas.height * 0.2;
+const blurContext = blurCanvas.getContext('2d');
+
 function render() {
   const now = Date.now();
   const delta = now - lastTime;
@@ -39,8 +49,25 @@ function render() {
 
   for (let i = 0; i < widgets.length; i++) {
     const widget = widgets[i];
-    widget.render(context);
+    widget.render(drawContext);
   }
+
+  blurContext.drawImage(drawCanvas, 0, 0, blurCanvas.width, blurCanvas.height);
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(drawCanvas, 0, 0);
+  context.globalCompositeOperation = 'screen';
+  context.globalAlpha = 0.08;
+  context.drawImage(blurCanvas, -4, 0, canvas.width, canvas.height);
+  context.drawImage(blurCanvas, 4, 0, canvas.width, canvas.height);
+  context.drawImage(blurCanvas, 0, -4, canvas.width, canvas.height);
+  context.drawImage(blurCanvas, 0, 4, canvas.width, canvas.height);
+  context.drawImage(blurCanvas, 4, -4, canvas.width, canvas.height);
+  context.drawImage(blurCanvas, 4, 4, canvas.width, canvas.height);
+  context.drawImage(blurCanvas, -4, -4, canvas.width, canvas.height);
+  context.drawImage(blurCanvas, -4, 4, canvas.width, canvas.height);
+  context.globalCompositeOperation = 'source-over';
+  context.globalAlpha = 1;
 
   // update fps
   fps.innerText = `${Math.round(1000 / delta).toFixed(0)} FPS`;
