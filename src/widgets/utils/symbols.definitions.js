@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Symbol
- * @property {number[]} pixels
+ * @property {number[]} dots
  * @property {number} width
  * @property {number} height
  */
@@ -14,7 +14,7 @@ function processSymbol(symbolAsStrings) {
     (prev, curr) => Math.max(prev, curr.length),
     0,
   );
-  const pixels = symbolAsStrings.reduce((prev, curr) => {
+  const dots = symbolAsStrings.reduce((prev, curr) => {
     return [
       ...prev,
       ...curr
@@ -24,7 +24,7 @@ function processSymbol(symbolAsStrings) {
     ];
   }, []);
   return {
-    pixels,
+    dots,
     width: symbolWidth,
     height: symbolAsStrings.length,
   };

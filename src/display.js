@@ -1,3 +1,5 @@
+import { createMatrix, getMatrix } from './matrix.js';
+
 const PIXEL_RATIO = 1;
 
 const canvas = document.createElement('canvas');
@@ -42,6 +44,8 @@ blurCanvas.width = canvas.width * 0.2;
 blurCanvas.height = canvas.height * 0.2;
 const blurContext = blurCanvas.getContext('2d');
 
+createMatrix(drawContext);
+
 function render() {
   const now = Date.now();
   const delta = now - lastTime;
@@ -52,10 +56,13 @@ function render() {
     widget.render(drawContext);
   }
 
-  blurContext.drawImage(drawCanvas, 0, 0, blurCanvas.width, blurCanvas.height);
+  getMatrix().render(drawContext);
 
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.drawImage(drawCanvas, 0, 0);
+
+  // apply blur
+  blurContext.drawImage(drawCanvas, 0, 0, blurCanvas.width, blurCanvas.height);
   context.globalCompositeOperation = 'screen';
   context.globalAlpha = 0.08;
   context.drawImage(blurCanvas, -4, 0, canvas.width, canvas.height);
