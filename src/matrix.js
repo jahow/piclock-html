@@ -48,34 +48,46 @@ class DotMatrix {
     for (let y = 0; y < symbol.height; y++) {
       for (let x = 0; x < symbol.width; x++) {
         const symbolIndex = y * symbol.width + x;
-        const matrixIndex = (yPosition + y) * this.width + (xPosition + x);
         const targetValue = symbol.dots[symbolIndex];
-        const currentValue = this.dots[matrixIndex];
-
-        if (currentValue === targetValue) {
-          this.dotChanged[matrixIndex] = false;
-          continue;
-        }
-
-        this.dotChanged[matrixIndex] = true;
-        this.anyDotChanged = true;
-
-        const difference = targetValue - currentValue;
-        if (currentValue < targetValue) {
-          this.dots[matrixIndex] = Math.min(
-            currentValue + difference * 0.25,
-            1,
-          );
-        } else if (currentValue > targetValue) {
-          this.dots[matrixIndex] = Math.max(
-            currentValue + difference * 0.125,
-            0,
-          );
-        }
-        if (this.dots[matrixIndex] < 0.01) this.dots[matrixIndex] = 0;
-        if (this.dots[matrixIndex] > 0.99) this.dots[matrixIndex] = 1;
+        this.setDotValue(xPosition + x, yPosition + y, targetValue);
       }
     }
+  }
+
+  /**
+   * @param {number} xPosition
+   * @param {number} yPosition
+   * @param {number} value
+   */
+  setDotValue(xPosition, yPosition, value) {
+    if (
+      xPosition < 0 ||
+      xPosition >= this.width ||
+      yPosition < 0 ||
+      yPosition >= this.height
+    ) {
+      return;
+    }
+
+    const matrixIndex = yPosition * this.width + xPosition;
+    const currentValue = this.dots[matrixIndex];
+
+    if (currentValue === value) {
+      this.dotChanged[matrixIndex] = false;
+      return;
+    }
+
+    this.dotChanged[matrixIndex] = true;
+    this.anyDotChanged = true;
+
+    const difference = value - currentValue;
+    if (currentValue < value) {
+      this.dots[matrixIndex] = Math.min(currentValue + difference * 0.25, 1);
+    } else if (currentValue > value) {
+      this.dots[matrixIndex] = Math.max(currentValue + difference * 0.125, 0);
+    }
+    if (this.dots[matrixIndex] < 0.01) this.dots[matrixIndex] = 0;
+    if (this.dots[matrixIndex] > 0.99) this.dots[matrixIndex] = 1;
   }
 
   /**
