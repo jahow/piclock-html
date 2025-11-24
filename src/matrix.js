@@ -1,7 +1,47 @@
 const DOT_SIZE_PX = 8;
 const DOT_SPACING_PX = 2;
 
-const DOT_COLOR = 'hsl(35,84%,60%)';
+export const DOT_OFF = /** @type {DotValue} */ (0);
+export const DOT_NIGHT = /** @type {DotValue} */ (1);
+export const DOT_DAY = /** @type {DotValue} */ (2);
+export const DOT_ON = /** @type {DotValue} */ (3);
+
+/**
+ * @typedef {DOT_OFF|DOT_ON|DOT_NIGHT|DOT_DAY} DotValue
+ */
+
+/**
+ * @param {DotValue} dotValue
+ * @return {string} color
+ */
+function getDotColor(dotValue) {
+  switch (dotValue) {
+    case DOT_OFF:
+      return 'hsl(41,76%,5%)';
+    case DOT_NIGHT:
+      return 'hsl(240,33%,31%)';
+    case DOT_DAY:
+      return 'hsl(25,38%,39%)';
+    case DOT_ON:
+      return 'hsl(47, 84%, 82%)';
+  }
+}
+
+/**
+ * @param {DotValue} valueFrom
+ * @param {DotValue} valueTo
+ * @param {number} ratio
+ * @return {string} color
+ */
+function interpolateDotValues(valueFrom, valueTo, ratio) {
+  const start = getDotColor(valueFrom);
+  const end = getDotColor(valueTo);
+  if (ratio === 0) return start;
+  if (ratio === 1) return end;
+  const ratioInPc = Math.round(ratio * 100);
+  const ratioOutPc = 100 - ratioInPc;
+  return `color-mix(in srgb, ${start} ${ratioOutPc}%, ${end} ${ratioInPc}%)`;
+}
 
 class DotMatrix {
   /**
@@ -19,9 +59,21 @@ class DotMatrix {
 
     /**
      * @private
+     * @type {DotValue[]}
+     */
+    this.dotValuesFrom = new Array(widthDot * heightDot).fill(DOT_OFF);
+
+    /**
+     * @private
+     * @type {DotValue[]}
+     */
+    this.dotValuesTo = new Array(widthDot * heightDot).fill(DOT_OFF);
+
+    /**
+     * @private
      * @type {number[]}
      */
-    this.dots = new Array(widthDot * heightDot).fill(0);
+    this.dotValuesInterpolationRatio = new Array(widthDot * heightDot).fill(1);
 
     /**
      * @private
@@ -49,7 +101,11 @@ class DotMatrix {
       for (let x = 0; x < symbol.width; x++) {
         const symbolIndex = y * symbol.width + x;
         const targetValue = symbol.dots[symbolIndex];
-        this.setDotValue(xPosition + x, yPosition + y, targetValue);
+        this.setDotValue(
+          xPosition + x,
+          yPosition + y,
+          targetValue ? DOT_ON : DOT_OFF,
+        );
       }
     }
   }
@@ -57,7 +113,7 @@ class DotMatrix {
   /**
    * @param {number} xPosition
    * @param {number} yPosition
-   * @param {number} value
+   * @param {DotValue} value
    */
   setDotValue(xPosition, yPosition, value) {
     if (
@@ -70,9 +126,12 @@ class DotMatrix {
     }
 
     const matrixIndex = yPosition * this.width + xPosition;
-    const currentValue = this.dots[matrixIndex];
+    const fromValue = this.dotValuesFrom[matrixIndex];
+    const toValue = this.dotValuesTo[matrixIndex];
+    let ratio = this.dotValuesInterpolationRatio[matrixIndex];
+    let currentValue = fromValue + (toValue - fromValue) * ratio;
 
-    if (currentValue === value) {
+    if (currentValue === value && ratio === 1) {
       this.dotChanged[matrixIndex] = false;
       return;
     }
@@ -80,14 +139,22 @@ class DotMatrix {
     this.dotChanged[matrixIndex] = true;
     this.anyDotChanged = true;
 
-    const difference = value - currentValue;
-    if (currentValue < value) {
-      this.dots[matrixIndex] = Math.min(currentValue + difference * 0.25, 1);
-    } else if (currentValue > value) {
-      this.dots[matrixIndex] = Math.max(currentValue + difference * 0.125, 0);
+    if (value !== this.dotValuesTo[matrixIndex]) {
+      // new transition
+      this.dotValuesInterpolationRatio[matrixIndex] = 0;
+      this.dotValuesFrom[matrixIndex] = toValue;
+      this.dotValuesTo[matrixIndex] = value;
+      currentValue = toValue;
+      ratio = 0;
     }
-    if (this.dots[matrixIndex] < 0.01) this.dots[matrixIndex] = 0;
-    if (this.dots[matrixIndex] > 0.99) this.dots[matrixIndex] = 1;
+
+    const ratioDelta =
+      currentValue < value ? (1 - ratio) * 0.25 : (1 - ratio) * 0.125;
+    let newRatio = ratio + ratioDelta;
+    if (newRatio < 0.01) newRatio = 0;
+    if (newRatio > 0.99) newRatio = 1;
+
+    this.dotValuesInterpolationRatio[matrixIndex] = newRatio;
   }
 
   /**
@@ -98,10 +165,12 @@ class DotMatrix {
     const baseY = (context.canvas.height - this.heightPx) / 2;
 
     if (this.anyDotChanged) {
-      for (let j = 0; j < this.dots.length; j++) {
+      for (let j = 0; j < this.dotValuesTo.length; j++) {
         if (!this.dotChanged[j] && !this.firstRender) continue; // we're forcing an initial render of all dots
 
-        const ratio = this.dots[j];
+        const fromValue = this.dotValuesFrom[j];
+        const toValue = this.dotValuesTo[j];
+        const ratio = this.dotValuesInterpolationRatio[j];
 
         const offsetX =
           baseX + (j % this.width) * (DOT_SIZE_PX + DOT_SPACING_PX);
@@ -111,12 +180,10 @@ class DotMatrix {
         context.fillRect(offsetX, offsetY, DOT_SIZE_PX, DOT_SIZE_PX);
 
         const fullRadius = DOT_SIZE_PX / 2;
-        const smallRadius = fullRadius;
-        const radius = smallRadius + (fullRadius - smallRadius) * ratio;
+        // const smallRadius = fullRadius;
+        const radius = fullRadius;
 
-        const value = Math.round((0.05 + ratio * 0.95) * 82);
-        context.fillStyle = `hsl(47, 84%, ${value}%)`;
-        // context.fillStyle = DOT_COLOR;
+        context.fillStyle = interpolateDotValues(fromValue, toValue, ratio);
         context.beginPath();
         context.roundRect(
           offsetX + fullRadius - radius,

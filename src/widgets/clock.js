@@ -13,8 +13,7 @@ const DOTS_WIDTH =
   CHAR_SPACING_DOTS +
   clockSymbols.symbols['0'].width +
   CHAR_SPACING_DOTS +
-  clockSymbols.symbols['0'].width +
-  PADDING_DOTS * 2;
+  clockSymbols.symbols['0'].width;
 const DOTS_HEIGHT = clockSymbols.height + PADDING_DOTS * 2;
 
 /**

@@ -1,4 +1,4 @@
-import { getMatrix } from '../matrix.js';
+import { DOT_DAY, DOT_ON, getMatrix } from '../matrix.js';
 
 const CURRENT_DAY_WIDTH_DOTS = 28;
 const OTHER_DAY_WIDTH_DOTS = 16;
@@ -24,13 +24,19 @@ export const daysWidget = {
 
     for (let i = 0; i < DAYS_RENDERED; i++) {
       const dayWidth = i === 0 ? CURRENT_DAY_WIDTH_DOTS : OTHER_DAY_WIDTH_DOTS;
-      this.renderDay(currentDotX, currentDotY, dayWidth);
+      this.renderDay(
+        currentDotX,
+        currentDotY,
+        dayWidth,
+        i === 0 ? ratioDayAdvancement : -1,
+      );
       currentDotX += dayWidth + PADDING_DOTS;
     }
   },
 
-  renderDay(baseX, baseY, dayWidth) {
+  renderDay(baseX, baseY, dayWidth, dayAdvancementRatio) {
     const matrix = getMatrix();
+    const nthRowIsNow = Math.round(dayWidth * dayAdvancementRatio);
 
     for (let i = 0; i < dayWidth; i++) {
       for (let j = 0; j < DAY_HEIGHT_DOTS; j++) {
@@ -42,7 +48,8 @@ export const daysWidget = {
         ) {
           continue; // skip corners
         }
-        matrix.setDotValue(baseX + i, baseY + j, 1);
+        const dotValue = i === nthRowIsNow ? DOT_ON : DOT_DAY;
+        matrix.setDotValue(baseX + i, baseY + j, dotValue);
       }
     }
   },
