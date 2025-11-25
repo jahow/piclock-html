@@ -1,5 +1,6 @@
 import * as SunCalc from 'suncalc';
 import { DOT_DAWN, DOT_DAY, DOT_NIGHT, DOT_ON, getMatrix } from '../matrix.js';
+import { getSymbolsFromString } from './utils/symbols.js';
 
 const CURRENT_DAY_WIDTH_DOTS = 48;
 const OTHER_DAY_WIDTH_DOTS = 24;
@@ -9,6 +10,8 @@ const PADDING_DOTS = 1;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const DAYS_RENDERED = 5;
+
+const WEEKDAY_NAMES = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 
 function getTodayTime() {
   return Math.floor(new Date().getTime() / DAY_IN_MS) * DAY_IN_MS;
@@ -45,7 +48,8 @@ export const daysWidget = {
 
     const matrix = getMatrix();
 
-    const ratioDayAdvancement = (new Date().getTime() % DAY_IN_MS) / DAY_IN_MS;
+    const today = new Date();
+    const ratioDayAdvancement = (today.getTime() % DAY_IN_MS) / DAY_IN_MS;
     let currentDotX =
       Math.round(matrix.width / 2) -
       Math.round(CURRENT_DAY_WIDTH_DOTS * ratioDayAdvancement);
@@ -59,6 +63,12 @@ export const daysWidget = {
         dayWidth,
         i === 0 ? ratioDayAdvancement : -1,
         sunriseTimes[i],
+      );
+      const dayName = WEEKDAY_NAMES[(today.getDay() + i) % 7];
+      matrix.applySymbolChain(
+        getSymbolsFromString(dayName),
+        Math.max(1, currentDotX),
+        currentDotY - 6,
       );
       currentDotX += dayWidth + PADDING_DOTS;
     }

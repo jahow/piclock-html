@@ -21,11 +21,11 @@ function getDotColor(dotValue) {
     case DOT_OFF:
       return 'hsl(41,76%,5%)';
     case DOT_NIGHT:
-      return 'hsl(240,33%,31%)';
+      return 'hsl(238,18%,30%)';
     case DOT_DAWN:
-      return 'hsl(7,34%,33%)';
+      return 'hsl(23,36%,35%)';
     case DOT_DAY:
-      return 'hsl(25,38%,39%)';
+      return 'hsl(40,19%,45%)';
     case DOT_ON:
       return 'hsl(47, 84%, 82%)';
     case DOT_OVERLAY:
@@ -117,6 +117,20 @@ class DotMatrix {
   }
 
   /**
+   * draw symbols one after the other with a padding of 1 dot
+   * @param {Symbol[]} symbols
+   * @param {number} xPosition
+   * @param {number} yPosition
+   */
+  applySymbolChain(symbols, xPosition, yPosition) {
+    let startX = xPosition;
+    for (let i = 0; i < symbols.length; i++) {
+      this.applySymbol(symbols[i], startX, yPosition);
+      startX += symbols[i].width + 1;
+    }
+  }
+
+  /**
    * @param {number} xPosition
    * @param {number} yPosition
    * @param {DotValue} value
@@ -196,7 +210,7 @@ class DotMatrix {
           offsetY + fullRadius - radius,
           radius * 2,
           radius * 2,
-          2,
+          DOT_SPACING_PX,
         );
         context.fill();
         console.log('drawing dot');
