@@ -35,7 +35,7 @@ export const clockWidget = {
 
     const matrix = getMatrix();
 
-    let currentDotX = Math.floor((matrix.width - DOTS_WIDTH) / 2);
+    let currentDotX = Math.round((matrix.width - DOTS_WIDTH) / 2);
     let currentDotY = 2;
 
     for (let i = 0; i < chars.length; i++) {

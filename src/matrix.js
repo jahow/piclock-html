@@ -3,11 +3,13 @@ const DOT_SPACING_PX = 2;
 
 export const DOT_OFF = /** @type {DotValue} */ (0);
 export const DOT_NIGHT = /** @type {DotValue} */ (1);
-export const DOT_DAY = /** @type {DotValue} */ (2);
-export const DOT_ON = /** @type {DotValue} */ (3);
+export const DOT_DAWN = /** @type {DotValue} */ (2);
+export const DOT_DAY = /** @type {DotValue} */ (3);
+export const DOT_ON = /** @type {DotValue} */ (4);
+export const DOT_OVERLAY = /** @type {DotValue} */ (5);
 
 /**
- * @typedef {DOT_OFF|DOT_ON|DOT_NIGHT|DOT_DAY} DotValue
+ * @typedef {DOT_OFF|DOT_ON|DOT_NIGHT|DOT_DAY|DOT_DAWN|DOT_OVERLAY} DotValue
  */
 
 /**
@@ -20,10 +22,14 @@ function getDotColor(dotValue) {
       return 'hsl(41,76%,5%)';
     case DOT_NIGHT:
       return 'hsl(240,33%,31%)';
+    case DOT_DAWN:
+      return 'hsl(7,34%,33%)';
     case DOT_DAY:
       return 'hsl(25,38%,39%)';
     case DOT_ON:
       return 'hsl(47, 84%, 82%)';
+    case DOT_OVERLAY:
+      return 'hsl(64,100%,87%)';
   }
 }
 
