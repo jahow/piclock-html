@@ -1,10 +1,11 @@
 import * as SunCalc from 'suncalc';
 import { DOT_DAWN, DOT_DAY, DOT_NIGHT, DOT_ON, getMatrix } from '../matrix.js';
-import { getSymbolsFromString } from './utils/symbols.js';
+import { getSymbolChainWidth, getSymbolsFromString } from './utils/symbols.js';
+import { weatherSymbols } from './utils/symbols.definitions.js';
 
 const CURRENT_DAY_WIDTH_DOTS = 48;
 const OTHER_DAY_WIDTH_DOTS = 24;
-const DAY_HEIGHT_DOTS = 12;
+const DAY_HEIGHT_DOTS = 15;
 const PADDING_DOTS = 1;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -53,7 +54,7 @@ export const daysWidget = {
     let currentDotX =
       Math.round(matrix.width / 2) -
       Math.round(CURRENT_DAY_WIDTH_DOTS * ratioDayAdvancement);
-    const currentDotY = 26;
+    const currentDotY = 24;
 
     for (let i = 0; i < DAYS_RENDERED; i++) {
       const dayWidth = i === 0 ? CURRENT_DAY_WIDTH_DOTS : OTHER_DAY_WIDTH_DOTS;
@@ -70,6 +71,10 @@ export const daysWidget = {
         Math.max(1, currentDotX),
         currentDotY - 6,
       );
+
+      // 3 weather points per day
+      this.renderDayWeather(currentDotX, currentDotY, dayWidth);
+
       currentDotX += dayWidth + PADDING_DOTS;
     }
   },
@@ -118,6 +123,43 @@ export const daysWidget = {
         }
         matrix.setDotValue(baseX + i, baseY + j, dotValue);
       }
+    }
+  },
+
+  /**
+   * @param {number} baseX
+   * @param {number} baseY
+   * @param {number} dayWidth
+   */
+  renderDayWeather(baseX, baseY, dayWidth) {
+    const matrix = getMatrix();
+    const weatherDotY = baseY + 1;
+    const weatherIconWidth = weatherSymbols.baseWidth;
+    const weatherIconShift = Math.round(weatherIconWidth / 2);
+
+    const weatherIconCount = dayWidth > 40 ? 3 : 1;
+    const weatherDotXOffset = Math.round(dayWidth / weatherIconCount / 2);
+
+    // TEMP
+    const weather = 'cloud';
+    const temp = -90;
+    const tempSymbols = getSymbolsFromString(temp.toFixed(0));
+
+    for (let i = 0; i < weatherIconCount; i++) {
+      const symbolX = baseX + weatherDotXOffset * (1 + i * 2);
+      matrix.applySymbol(
+        weatherSymbols.symbols[weather],
+        symbolX - weatherIconShift,
+        weatherDotY,
+        false,
+      );
+      const tempSymbolsShift = Math.round(getSymbolChainWidth(tempSymbols) / 2);
+      matrix.applySymbolChain(
+        tempSymbols,
+        symbolX - tempSymbolsShift - 1,
+        weatherDotY + 8,
+        false,
+      );
     }
   },
 };

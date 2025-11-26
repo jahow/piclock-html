@@ -21,11 +21,11 @@ function getDotColor(dotValue) {
     case DOT_OFF:
       return 'hsl(41,76%,5%)';
     case DOT_NIGHT:
-      return 'hsl(238,18%,30%)';
+      return 'hsl(236,15%,20%)';
     case DOT_DAWN:
-      return 'hsl(23,36%,35%)';
+      return 'hsl(22,46%,30%)';
     case DOT_DAY:
-      return 'hsl(40,19%,45%)';
+      return 'hsl(39,25%,33%)';
     case DOT_ON:
       return 'hsl(47, 84%, 82%)';
     case DOT_OVERLAY:
@@ -101,12 +101,16 @@ class DotMatrix {
    * @param {Symbol} symbol
    * @param {number} xPosition
    * @param {number} yPosition
+   * @param {boolean} clearBackground
    */
-  applySymbol(symbol, xPosition, yPosition) {
+  applySymbol(symbol, xPosition, yPosition, clearBackground = true) {
     for (let y = 0; y < symbol.height; y++) {
       for (let x = 0; x < symbol.width; x++) {
         const symbolIndex = y * symbol.width + x;
         const targetValue = symbol.dots[symbolIndex];
+        if (!targetValue && !clearBackground) {
+          continue;
+        }
         this.setDotValue(
           xPosition + x,
           yPosition + y,
@@ -121,11 +125,12 @@ class DotMatrix {
    * @param {Symbol[]} symbols
    * @param {number} xPosition
    * @param {number} yPosition
+   * @param {boolean} clearBackground
    */
-  applySymbolChain(symbols, xPosition, yPosition) {
+  applySymbolChain(symbols, xPosition, yPosition, clearBackground = true) {
     let startX = xPosition;
     for (let i = 0; i < symbols.length; i++) {
-      this.applySymbol(symbols[i], startX, yPosition);
+      this.applySymbol(symbols[i], startX, yPosition, clearBackground);
       startX += symbols[i].width + 1;
     }
   }
@@ -152,8 +157,13 @@ class DotMatrix {
     let currentValue = fromValue + (toValue - fromValue) * ratio;
 
     if (currentValue === value && ratio === 1) {
-      this.dotChanged[matrixIndex] = false;
+      // this.dotChanged[matrixIndex] = false;
       return;
+    }
+
+    if (this.dotChanged[matrixIndex]) {
+      // the dot was already changed in that frame; simply change the target
+      this.dotValuesTo[matrixIndex] = value;
     }
 
     this.dotChanged[matrixIndex] = true;
@@ -184,6 +194,7 @@ class DotMatrix {
     const baseX = (context.canvas.width - this.widthPx) / 2;
     const baseY = (context.canvas.height - this.heightPx) / 2;
 
+    let rendered = 0;
     if (this.anyDotChanged) {
       for (let j = 0; j < this.dotValuesTo.length; j++) {
         if (!this.dotChanged[j] && !this.firstRender) continue; // we're forcing an initial render of all dots
@@ -213,9 +224,11 @@ class DotMatrix {
           DOT_SPACING_PX,
         );
         context.fill();
-        console.log('drawing dot');
+        rendered++;
       }
     }
+
+    console.log(`rendered ${rendered} dots`);
 
     // after render
     this.firstRender = false;

@@ -2,7 +2,7 @@ import { clockSymbols } from './utils/symbols.definitions.js';
 import { getMatrix } from '../matrix.js';
 
 const PADDING_DOTS = 1;
-const CHAR_SPACING_DOTS = 2;
+const CHAR_SPACING_DOTS = 3;
 
 const DOTS_WIDTH =
   clockSymbols.symbols['0'].width +
@@ -36,7 +36,7 @@ export const clockWidget = {
     const matrix = getMatrix();
 
     let currentDotX = Math.round((matrix.width - DOTS_WIDTH) / 2);
-    let currentDotY = 2;
+    let currentDotY = 1;
 
     for (let i = 0; i < chars.length; i++) {
       const symbol = clockSymbols.symbols[chars[i]];
