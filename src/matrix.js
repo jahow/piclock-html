@@ -189,6 +189,20 @@ class DotMatrix {
 
   /**
    * @param {CanvasRenderingContext2D} context
+   * @param {number} dotX
+   * @param {number} dotY
+   * @return {number[]} pixel coordinates
+   */
+  getPixelFromDotPosition(context, dotX, dotY) {
+    const baseX = (context.canvas.width - this.widthPx) / 2;
+    const baseY = (context.canvas.height - this.heightPx) / 2;
+    const pixelX = baseX + dotX * (DOT_SIZE_PX + DOT_SPACING_PX);
+    const pixelY = baseY + dotY * (DOT_SIZE_PX + DOT_SPACING_PX);
+    return [pixelX, pixelY];
+  }
+
+  /**
+   * @param {CanvasRenderingContext2D} context
    */
   render(context) {
     const baseX = (context.canvas.width - this.widthPx) / 2;

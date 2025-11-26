@@ -75,6 +75,8 @@ export const daysWidget = {
       // 3 weather points per day
       this.renderDayWeather(currentDotX, currentDotY, dayWidth);
 
+      this.renderDayAppointments(currentDotX, currentDotY, dayWidth, context);
+
       currentDotX += dayWidth + PADDING_DOTS;
     }
   },
@@ -161,5 +163,21 @@ export const daysWidget = {
         false,
       );
     }
+  },
+
+  renderDayAppointments(baseX, baseY, dayWidth, context) {
+    const matrix = getMatrix();
+    const textOrigin = matrix.getPixelFromDotPosition(
+      context,
+      baseX,
+      baseY + 17,
+    );
+    context.font = '18px sans-serif';
+    context.fillStyle = 'hsl(47, 84%, 82%)';
+    context.strokeStyle = 'hsl(47, 84%, 82%)';
+    context.fillText('☀️ first text', textOrigin[0], textOrigin[1]);
+    context.fillText('🏫 second text', textOrigin[0], textOrigin[1] + 18);
+    context.fillText('🏫 third text', textOrigin[0] + 50, textOrigin[1] + 36);
+    context.fillText('🏫 fourth text', textOrigin[0] + 70, textOrigin[1] + 54);
   },
 };
