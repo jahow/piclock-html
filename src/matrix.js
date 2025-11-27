@@ -79,13 +79,7 @@ class DotMatrix {
      * @private
      * @type {number[]}
      */
-    this.dotValuesInterpolationRatio = new Array(widthDot * heightDot).fill(1);
-
-    /**
-     * @private
-     * @type {boolean[]}
-     */
-    this.dotChanged = new Array(widthDot * heightDot).fill(true);
+    this.dotValuesInterpolationRatio = new Array(widthDot * heightDot).fill(0);
 
     /**
      * @private
@@ -151,40 +145,40 @@ class DotMatrix {
     }
 
     const matrixIndex = yPosition * this.width + xPosition;
+
+    // set target value
+    this.dotValuesTo[matrixIndex] = value;
+
     const fromValue = this.dotValuesFrom[matrixIndex];
     const toValue = this.dotValuesTo[matrixIndex];
-    let ratio = this.dotValuesInterpolationRatio[matrixIndex];
-    let currentValue = fromValue + (toValue - fromValue) * ratio;
+    const ratio = this.dotValuesInterpolationRatio[matrixIndex];
+    const dotStable = fromValue === toValue;
 
-    if (currentValue === value && ratio === 1) {
-      // this.dotChanged[matrixIndex] = false;
+    if (dotStable) {
       return;
     }
 
-    if (this.dotChanged[matrixIndex]) {
-      // the dot was already changed in that frame; simply change the target
-      this.dotValuesTo[matrixIndex] = value;
-    }
-
-    this.dotChanged[matrixIndex] = true;
-    this.anyDotChanged = true;
-
-    if (value !== this.dotValuesTo[matrixIndex]) {
-      // new transition
+    // only reset ratio if the ratio is 1
+    if (ratio === 1) {
       this.dotValuesInterpolationRatio[matrixIndex] = 0;
-      this.dotValuesFrom[matrixIndex] = toValue;
-      this.dotValuesTo[matrixIndex] = value;
-      currentValue = toValue;
-      ratio = 0;
     }
 
-    const ratioDelta =
-      currentValue < value ? (1 - ratio) * 0.25 : (1 - ratio) * 0.125;
-    let newRatio = ratio + ratioDelta;
-    if (newRatio < 0.01) newRatio = 0;
-    if (newRatio > 0.99) newRatio = 1;
+    this.anyDotChanged = true;
+  }
 
-    this.dotValuesInterpolationRatio[matrixIndex] = newRatio;
+  /**
+   * @param {number} xPosition
+   * @param {number} yPosition
+   * @param {number} rectWidth
+   * @param {number} rectHeight
+   * @param {DotValue} value
+   */
+  fillDots(xPosition, yPosition, rectWidth, rectHeight, value) {
+    for (let y = 0; y < rectHeight; y++) {
+      for (let x = 0; x < rectWidth; x++) {
+        this.setDotValue(xPosition + x, yPosition + y, value);
+      }
+    }
   }
 
   /**
@@ -211,12 +205,26 @@ class DotMatrix {
     let rendered = 0;
     if (this.anyDotChanged) {
       for (let j = 0; j < this.dotValuesTo.length; j++) {
-        if (!this.dotChanged[j] && !this.firstRender) continue; // we're forcing an initial render of all dots
-
+        let ratio = this.dotValuesInterpolationRatio[j];
         const fromValue = this.dotValuesFrom[j];
         const toValue = this.dotValuesTo[j];
-        const ratio = this.dotValuesInterpolationRatio[j];
 
+        // const dotStable = ratio === 1;
+        const dotStable = fromValue === toValue;
+        if (dotStable && !this.firstRender) continue; // we're forcing an initial render of all dots
+
+        // update dot transition ratio
+        const ratioDelta =
+          fromValue < toValue ? (1 - ratio) * 0.25 : (1 - ratio) * 0.125;
+        ratio += ratioDelta;
+        if (ratio < 0.01) ratio = 0;
+        if (ratio > 0.99) {
+          ratio = 1;
+          this.dotValuesFrom[j] = toValue; // we're storing toValue in fromValue when the transition is complete
+        }
+        this.dotValuesInterpolationRatio[j] = ratio;
+
+        // render dot
         const offsetX =
           baseX + (j % this.width) * (DOT_SIZE_PX + DOT_SPACING_PX);
         const offsetY =
@@ -246,7 +254,6 @@ class DotMatrix {
 
     // after render
     this.firstRender = false;
-    this.dotChanged.fill(false);
     this.anyDotChanged = false;
   }
 }

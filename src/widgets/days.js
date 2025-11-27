@@ -1,5 +1,12 @@
 import * as SunCalc from 'suncalc';
-import { DOT_DAWN, DOT_DAY, DOT_NIGHT, DOT_ON, getMatrix } from '../matrix.js';
+import {
+  DOT_DAWN,
+  DOT_DAY,
+  DOT_NIGHT,
+  DOT_OFF,
+  DOT_ON,
+  getMatrix,
+} from '../matrix.js';
 import { getSymbolChainWidth, getSymbolsFromString } from './utils/symbols.js';
 import { weatherSymbols } from './utils/symbols.definitions.js';
 
@@ -49,6 +56,8 @@ export const daysWidget = {
 
     const matrix = getMatrix();
 
+    matrix.fillDots(0, 18, matrix.width, DAY_HEIGHT_DOTS + 6, DOT_OFF);
+
     const today = new Date();
     const ratioDayAdvancement = (today.getTime() % DAY_IN_MS) / DAY_IN_MS;
     let currentDotX =
@@ -90,6 +99,7 @@ export const daysWidget = {
    */
   renderDayBlock(baseX, baseY, dayWidth, dayAdvancementRatio, sunriseTimes) {
     const matrix = getMatrix();
+
     const nthRowIsNow = Math.round(dayWidth * dayAdvancementRatio);
     const nightEndRow = Math.round(
       dayWidth * ((sunriseTimes.nightEnd.getTime() % DAY_IN_MS) / DAY_IN_MS),
@@ -116,7 +126,8 @@ export const daysWidget = {
           continue; // skip corners
         }
         let dotValue = DOT_DAY;
-        if (i === nthRowIsNow) {
+        if (i === nthRowIsNow && (j === 0 || j === DAY_HEIGHT_DOTS - 1)) {
+          // current time indicator
           dotValue = DOT_ON;
         } else if (i <= nightEndRow || i >= nightStartRow) {
           dotValue = DOT_NIGHT;
@@ -176,8 +187,8 @@ export const daysWidget = {
     context.fillStyle = 'hsl(47, 84%, 82%)';
     context.strokeStyle = 'hsl(47, 84%, 82%)';
     context.fillText('☀️ first text', textOrigin[0], textOrigin[1]);
-    context.fillText('🏫 second text', textOrigin[0], textOrigin[1] + 18);
-    context.fillText('🏫 third text', textOrigin[0] + 50, textOrigin[1] + 36);
-    context.fillText('🏫 fourth text', textOrigin[0] + 70, textOrigin[1] + 54);
+    context.fillText('🏫 second text', textOrigin[0], textOrigin[1] + 20);
+    context.fillText('🏫 third text', textOrigin[0] + 50, textOrigin[1] + 40);
+    context.fillText('🏫 fourth text', textOrigin[0] + 70, textOrigin[1] + 60);
   },
 };
