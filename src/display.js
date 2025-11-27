@@ -99,3 +99,37 @@ function render() {
 }
 
 render();
+
+// handle events
+const prevPointerPos = [0, 0];
+canvas.addEventListener('pointerdown', (event) => {
+  for (let i = 0; i < widgets.length; i++) {
+    const widget = widgets[i];
+    if (!('pointerDown' in widget)) continue;
+    widget.pointerDown(context, event.clientX, event.clientY);
+  }
+  prevPointerPos[0] = event.clientX;
+  prevPointerPos[1] = event.clientY;
+});
+canvas.addEventListener('pointerup', (event) => {
+  for (let i = 0; i < widgets.length; i++) {
+    const widget = widgets[i];
+    if (!('pointerUp' in widget)) continue;
+    widget.pointerUp(context, event.clientX, event.clientY);
+  }
+});
+canvas.addEventListener('pointermove', (event) => {
+  for (let i = 0; i < widgets.length; i++) {
+    const widget = widgets[i];
+    if (!('pointerMove' in widget)) continue;
+    widget.pointerMove(
+      context,
+      event.clientX,
+      event.clientY,
+      prevPointerPos[0],
+      prevPointerPos[1],
+    );
+  }
+  prevPointerPos[0] = event.clientX;
+  prevPointerPos[1] = event.clientY;
+});

@@ -23,9 +23,9 @@ function getDotColor(dotValue) {
     case DOT_NIGHT:
       return 'hsl(236,15%,20%)';
     case DOT_DAWN:
-      return 'hsl(22,46%,30%)';
+      return 'hsl(190,24%,28%)';
     case DOT_DAY:
-      return 'hsl(39,25%,33%)';
+      return 'hsl(163,33%,36%)';
     case DOT_ON:
       return 'hsl(47, 84%, 82%)';
     case DOT_OVERLAY:
@@ -197,6 +197,28 @@ class DotMatrix {
 
   /**
    * @param {CanvasRenderingContext2D} context
+   * @param {number} pixelX
+   * @param {number} pixelY
+   * @return {number[]} dot coordinates
+   */
+  getDotPositionFromPixel(context, pixelX, pixelY) {
+    const baseX = (context.canvas.width - this.widthPx) / 2;
+    const baseY = (context.canvas.height - this.heightPx) / 2;
+    const dotX = this.getDotFromPixel(pixelX - baseX);
+    const dotY = this.getDotFromPixel(pixelY - baseY);
+    return [dotX, dotY];
+  }
+
+  /**
+   * @param {number} pixelValue
+   * @return {number} dot value
+   */
+  getDotFromPixel(pixelValue) {
+    return Math.round(pixelValue / (DOT_SIZE_PX + DOT_SPACING_PX));
+  }
+
+  /**
+   * @param {CanvasRenderingContext2D} context
    */
   render(context) {
     const baseX = (context.canvas.width - this.widthPx) / 2;
@@ -217,7 +239,6 @@ class DotMatrix {
         const ratioDelta =
           fromValue < toValue ? (1 - ratio) * 0.25 : (1 - ratio) * 0.125;
         ratio += ratioDelta;
-        if (ratio < 0.01) ratio = 0;
         if (ratio > 0.99) {
           ratio = 1;
           this.dotValuesFrom[j] = toValue; // we're storing toValue in fromValue when the transition is complete
@@ -250,7 +271,7 @@ class DotMatrix {
       }
     }
 
-    console.log(`rendered ${rendered} dots`);
+    // console.log(`rendered ${rendered} dots`);
 
     // after render
     this.firstRender = false;

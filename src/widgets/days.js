@@ -47,12 +47,22 @@ function recomputeSunriseTimes() {
   }
 }
 
+let dragging = false;
+let dragShiftPx = 0;
+
 /**
  * @type {Widget}
  */
 export const daysWidget = {
   render(context) {
     recomputeSunriseTimes();
+
+    if (!dragging) {
+      dragShiftPx -= dragShiftPx * 0.3;
+      if (Math.abs(dragShiftPx) < 2) {
+        dragShiftPx = 0;
+      }
+    }
 
     const matrix = getMatrix();
 
@@ -62,7 +72,8 @@ export const daysWidget = {
     const ratioDayAdvancement = (today.getTime() % DAY_IN_MS) / DAY_IN_MS;
     let currentDotX =
       Math.round(matrix.width / 2) -
-      Math.round(CURRENT_DAY_WIDTH_DOTS * ratioDayAdvancement);
+      Math.round(CURRENT_DAY_WIDTH_DOTS * ratioDayAdvancement) +
+      matrix.getDotFromPixel(dragShiftPx);
     const currentDotY = 24;
 
     for (let i = 0; i < DAYS_RENDERED; i++) {
@@ -75,9 +86,13 @@ export const daysWidget = {
         sunriseTimes[i],
       );
       const dayName = WEEKDAY_NAMES[(today.getDay() + i) % 7];
+      const dayNameSymbols = getSymbolsFromString(dayName);
       matrix.applySymbolChain(
-        getSymbolsFromString(dayName),
-        Math.max(1, currentDotX),
+        dayNameSymbols,
+        Math.min(
+          currentDotX + dayWidth - getSymbolChainWidth(dayNameSymbols) - 2,
+          Math.max(0, currentDotX),
+        ),
         currentDotY - 6,
       );
 
@@ -190,5 +205,24 @@ export const daysWidget = {
     context.fillText('🏫 second text', textOrigin[0], textOrigin[1] + 20);
     context.fillText('🏫 third text', textOrigin[0] + 50, textOrigin[1] + 40);
     context.fillText('🏫 fourth text', textOrigin[0] + 70, textOrigin[1] + 60);
+  },
+
+  pointerDown(context, x, y) {
+    const dotPos = getMatrix().getDotPositionFromPixel(context, x, y);
+    if (dotPos[1] < 18 || dotPos[1] > 18 + DAY_HEIGHT_DOTS + 6) {
+      return;
+    }
+    dragging = true;
+  },
+
+  pointerMove(context, x, y, prevX, prevY) {
+    if (!dragging) {
+      return;
+    }
+    dragShiftPx += x - prevX;
+  },
+
+  pointerUp(context, x, y) {
+    dragging = false;
   },
 };

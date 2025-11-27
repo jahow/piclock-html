@@ -2,9 +2,9 @@ import {
   getSymbolChainValue,
   getSymbolChainWidth,
   getSymbolValue,
-} from './utils/symbols';
-import { textSymbols, weatherSymbols } from './utils/symbols.definitions';
-import { getValue } from './utils/misc';
+} from './symbols.js';
+import { textSymbols, weatherSymbols } from './symbols.definitions.js';
+import { getValue } from './misc.js';
 
 const INTERVAL = 60 * 1000 * 15; // 15 minutes
 const COUNT = 5;
@@ -48,14 +48,14 @@ export function weatherWidget(baseX, baseY) {
           weatherSymbols,
           icon,
           x - currentX,
-          y - currentY
+          y - currentY,
         );
         value += getSymbolChainValue(
           textSymbols,
           tempKeys,
           1,
           x - 4 - currentX + Math.round(tempWidth / 2),
-          y - currentY - 8
+          y - currentY - 8,
         );
         currentX += weatherSymbols.baseWidth + spacing;
       }
@@ -71,7 +71,7 @@ export function weatherWidget(baseX, baseY) {
         'https://api.openweathermap.org/data/2.5/forecast?q=' +
           LOCATION +
           '&appid=' +
-          KEY
+          KEY,
       )
         .then((resp) => resp.json())
         .then((resp) => {
@@ -125,14 +125,6 @@ export function weatherWidget(baseX, baseY) {
             date.setDate(date.getDate() + 1);
           }
         });
-    },
-    extent() {
-      return {
-        minX: getValue(baseX),
-        minY: getValue(baseY),
-        maxX: getValue(baseX) + COUNT * (weatherSymbols.baseWidth + spacing),
-        maxY: getValue(baseY) + textSymbols.height + 8,
-      };
     },
   };
 }
