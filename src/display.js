@@ -44,6 +44,11 @@ matrixCanvas.width = canvas.width;
 matrixCanvas.height = canvas.height;
 const matrixContext = matrixCanvas.getContext('2d');
 
+const previousMatrixCanvas = document.createElement('canvas');
+previousMatrixCanvas.width = canvas.width;
+previousMatrixCanvas.height = canvas.height;
+const previousMatrixContext = previousMatrixCanvas.getContext('2d');
+
 const blurCanvas = document.createElement('canvas');
 blurCanvas.width = canvas.width * 0.2;
 blurCanvas.height = canvas.height * 0.2;
@@ -65,7 +70,7 @@ function render() {
 
   getMatrix().render(matrixContext);
 
-  // cpy matrix and then the draw canvas on top
+  // copy matrix and then the draw canvas on top
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.drawImage(matrixCanvas, 0, 0);
   context.drawImage(drawCanvas, 0, 0);
@@ -91,6 +96,9 @@ function render() {
   context.drawImage(blurCanvas, -4, 4, canvas.width, canvas.height);
   context.globalCompositeOperation = 'source-over';
   context.globalAlpha = 1;
+
+  // save matrix frame
+  previousMatrixContext.drawImage(matrixCanvas, 0, 0);
 
   // update fps
   fps.innerText = `${Math.round(1000 / delta).toFixed(0)} FPS`;

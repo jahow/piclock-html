@@ -79,7 +79,19 @@ class DotMatrix {
      * @private
      * @type {number[]}
      */
-    this.dotValuesInterpolationRatio = new Array(widthDot * heightDot).fill(0);
+    this.dotValuesInterpolationRatio = new Array(widthDot * heightDot).fill(1);
+
+    /**
+     * @private
+     * @type {DotValue[]}
+     */
+    this.dotValuesLastRequested = new Array(widthDot * heightDot).fill(DOT_OFF);
+
+    /**
+     * @private
+     * @type {boolean[]}
+     */
+    this.dotValuesChanged = new Array(widthDot * heightDot).fill(false);
 
     /**
      * @private
@@ -146,23 +158,8 @@ class DotMatrix {
 
     const matrixIndex = yPosition * this.width + xPosition;
 
-    // set target value
-    this.dotValuesTo[matrixIndex] = value;
-
-    const fromValue = this.dotValuesFrom[matrixIndex];
-    const toValue = this.dotValuesTo[matrixIndex];
-    const ratio = this.dotValuesInterpolationRatio[matrixIndex];
-    const dotStable = fromValue === toValue;
-
-    if (dotStable) {
-      return;
-    }
-
-    // only reset ratio if the ratio is 1
-    if (ratio === 1) {
-      this.dotValuesInterpolationRatio[matrixIndex] = 0;
-    }
-
+    this.dotValuesLastRequested[matrixIndex] = value;
+    this.dotValuesChanged[matrixIndex] = true;
     this.anyDotChanged = true;
   }
 
@@ -229,15 +226,24 @@ class DotMatrix {
       for (let j = 0; j < this.dotValuesTo.length; j++) {
         let ratio = this.dotValuesInterpolationRatio[j];
         const fromValue = this.dotValuesFrom[j];
-        const toValue = this.dotValuesTo[j];
+        let toValue = this.dotValuesTo[j];
+        const changed = this.dotValuesChanged[j];
+        const lastRequestedValue = this.dotValuesLastRequested[j];
 
-        // const dotStable = ratio === 1;
-        const dotStable = fromValue === toValue;
+        if (changed && lastRequestedValue !== toValue) {
+          toValue = lastRequestedValue;
+          this.dotValuesTo[j] = toValue;
+          if (ratio === 1) {
+            ratio = 0;
+          }
+        }
+
+        const dotStable = ratio === 1;
         if (dotStable && !this.firstRender) continue; // we're forcing an initial render of all dots
 
         // update dot transition ratio
         const ratioDelta =
-          fromValue < toValue ? (1 - ratio) * 0.25 : (1 - ratio) * 0.125;
+          fromValue < toValue ? (1 - ratio) * 0.25 : (1 - ratio) * 0.15;
         ratio += ratioDelta;
         if (ratio > 0.99) {
           ratio = 1;
@@ -271,7 +277,7 @@ class DotMatrix {
       }
     }
 
-    // console.log(`rendered ${rendered} dots`);
+    console.log(`drawn ${rendered} new dots`);
 
     // after render
     this.firstRender = false;
