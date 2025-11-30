@@ -9,6 +9,7 @@ import {
 } from '../matrix.js';
 import { getSymbolChainWidth, getSymbolsFromString } from './utils/symbols.js';
 import { weatherSymbols } from './utils/symbols.definitions.js';
+import { getEventsOnDate } from './utils/events.js';
 
 const CURRENT_DAY_WIDTH_DOTS = 48;
 const OTHER_DAY_WIDTH_DOTS = 24;
@@ -77,6 +78,8 @@ export const daysWidget = {
     const currentDotY = 24;
 
     for (let i = 0; i < DAYS_RENDERED; i++) {
+      const currentDate = new Date(today.getTime() + i * DAY_IN_MS);
+
       const dayWidth = i === 0 ? CURRENT_DAY_WIDTH_DOTS : OTHER_DAY_WIDTH_DOTS;
       this.renderDayBlock(
         currentDotX,
@@ -85,7 +88,7 @@ export const daysWidget = {
         i === 0 ? ratioDayAdvancement : -1,
         sunriseTimes[i],
       );
-      const dayName = WEEKDAY_NAMES[(today.getDay() + i) % 7];
+      const dayName = WEEKDAY_NAMES[currentDate.getDay()];
       const dayNameSymbols = getSymbolsFromString(dayName);
       matrix.applySymbolChain(
         dayNameSymbols,
@@ -99,7 +102,14 @@ export const daysWidget = {
       // 3 weather points per day
       this.renderDayWeather(currentDotX, currentDotY, dayWidth);
 
-      this.renderDayAppointments(currentDotX, currentDotY, dayWidth, context);
+      const events = getEventsOnDate(currentDate);
+      this.renderDayAppointments(
+        currentDotX,
+        currentDotY,
+        dayWidth,
+        context,
+        events,
+      );
 
       currentDotX += dayWidth + PADDING_DOTS;
     }
@@ -191,7 +201,7 @@ export const daysWidget = {
     }
   },
 
-  renderDayAppointments(baseX, baseY, dayWidth, context) {
+  renderDayAppointments(baseX, baseY, dayWidth, context, events) {
     const matrix = getMatrix();
     const textOrigin = matrix.getPixelFromDotPosition(
       context,
@@ -201,10 +211,10 @@ export const daysWidget = {
     context.font = '18px sans-serif';
     context.fillStyle = 'hsl(47, 84%, 82%)';
     context.strokeStyle = 'hsl(47, 84%, 82%)';
-    context.fillText('☀️ first text', textOrigin[0], textOrigin[1]);
-    context.fillText('🏫 second text', textOrigin[0], textOrigin[1] + 20);
-    context.fillText('🏫 third text', textOrigin[0] + 50, textOrigin[1] + 40);
-    context.fillText('🏫 fourth text', textOrigin[0] + 70, textOrigin[1] + 60);
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      context.fillText(event.title, textOrigin[0], textOrigin[1] + 20 * i);
+    }
   },
 
   pointerDown(context, x, y) {
