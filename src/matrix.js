@@ -1,5 +1,5 @@
-const DOT_SIZE_PX = 8;
-const DOT_SPACING_PX = 2;
+export const DOT_SIZE_PX = 8;
+export const DOT_SPACING_PX = 2;
 
 export const DOT_OFF = /** @type {DotValue} */ (0);
 export const DOT_NIGHT = /** @type {DotValue} */ (1);

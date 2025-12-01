@@ -5,11 +5,15 @@ import {
   DOT_NIGHT,
   DOT_OFF,
   DOT_ON,
+  DOT_SIZE_PX,
+  DOT_SPACING_PX,
   getMatrix,
 } from '../matrix.js';
 import { getSymbolChainWidth, getSymbolsFromString } from './utils/symbols.js';
 import { weatherSymbols } from './utils/symbols.definitions.js';
 import { getEventsOnDate } from './utils/events.js';
+
+const HIGHTLIGHT_COLOR = 'hsl(64,100%,46%)';
 
 const CURRENT_DAY_WIDTH_DOTS = 48;
 const OTHER_DAY_WIDTH_DOTS = 24;
@@ -85,6 +89,7 @@ export const daysWidget = {
         currentDotX,
         currentDotY,
         dayWidth,
+        context,
         i === 0 ? ratioDayAdvancement : -1,
         sunriseTimes[i],
       );
@@ -121,13 +126,20 @@ export const daysWidget = {
    * @param {number} baseX
    * @param {number} baseY
    * @param {number} dayWidth
+   * @param {CanvasRenderingContext2D} context
    * @param {number} dayAdvancementRatio
    * @param {Object} sunriseTimes
    */
-  renderDayBlock(baseX, baseY, dayWidth, dayAdvancementRatio, sunriseTimes) {
+  renderDayBlock(
+    baseX,
+    baseY,
+    dayWidth,
+    context,
+    dayAdvancementRatio,
+    sunriseTimes,
+  ) {
     const matrix = getMatrix();
 
-    const nthRowIsNow = Math.round(dayWidth * dayAdvancementRatio);
     const nightEndRow = Math.round(
       dayWidth * ((sunriseTimes.nightEnd.getTime() % DAY_IN_MS) / DAY_IN_MS),
     );
@@ -153,10 +165,7 @@ export const daysWidget = {
           continue; // skip corners
         }
         let dotValue = DOT_DAY;
-        if (i === nthRowIsNow && (j === 0 || j === DAY_HEIGHT_DOTS - 1)) {
-          // current time indicator
-          dotValue = DOT_ON;
-        } else if (i <= nightEndRow || i >= nightStartRow) {
+        if (i <= nightEndRow || i >= nightStartRow) {
           dotValue = DOT_NIGHT;
         } else if (i <= sunriseRow || i >= sunsetRow) {
           dotValue = DOT_DAWN;
@@ -164,6 +173,27 @@ export const daysWidget = {
         matrix.setDotValue(baseX + i, baseY + j, dotValue);
       }
     }
+
+    if (dayAdvancementRatio < 0) {
+      return;
+    }
+
+    // current time indicator
+    const baseCoords = matrix.getPixelFromDotPosition(
+      context,
+      baseX + dayWidth * dayAdvancementRatio,
+      baseY,
+    );
+    baseCoords[0] += DOT_SIZE_PX / 2 + DOT_SPACING_PX / 2;
+    context.fillStyle = HIGHTLIGHT_COLOR;
+    const dayHeightPx = matrix.getPixelFromDot(DAY_HEIGHT_DOTS);
+    context.beginPath();
+    context.moveTo(baseCoords[0], baseCoords[1] + dayHeightPx + 10);
+    context.lineTo(baseCoords[0] + 10, baseCoords[1] + dayHeightPx);
+    context.lineTo(baseCoords[0], baseCoords[1] + dayHeightPx - 10);
+    context.lineTo(baseCoords[0] - 10, baseCoords[1] + dayHeightPx);
+    context.closePath();
+    context.fill();
   },
 
   /**
@@ -230,14 +260,14 @@ export const daysWidget = {
       context.fillStyle = 'hsl(47, 84%, 82%)';
 
       if (!showEventTime) {
-        context.fillText(event.title, eventOriginX, eventOriginY);
+        context.fillText(event.title, eventOriginX, eventOriginY - 2);
         continue;
       }
 
       const textOriginX = eventOriginX + eventStartPx - 14 - titleWidthPx; // text on the left of the time bar
-      context.fillText(event.title, textOriginX, eventOriginY);
-      context.fillStyle = 'hsl(333,90%,38%)';
-      context.strokeStyle = 'hsl(333,90%,38%)';
+      context.fillText(event.title, textOriginX, eventOriginY - 2);
+      context.fillStyle = HIGHTLIGHT_COLOR;
+      context.strokeStyle = HIGHTLIGHT_COLOR;
       context.lineWidth = 2;
       context.beginPath();
       context.moveTo(eventOriginX + eventStartPx, eventOriginY - 14);
@@ -249,23 +279,17 @@ export const daysWidget = {
       context.lineTo(eventOriginX + eventStartPx, eventOriginY - 14);
       context.closePath();
       context.fill();
-      context.strokeRect(
-        eventOriginX + eventStartPx,
-        eventsOrigin[1] - 18,
-        0,
-        eventOriginY - eventsOrigin[1] + 8,
-      );
-      context.strokeRect(
-        eventOriginX + eventEndPx,
-        eventsOrigin[1] - 18,
-        0,
-        eventOriginY - eventsOrigin[1] + 8,
-      );
-      // context.fillRect(
-      //   textOrigin[0] + startPx,
-      //   textOrigin[1] + 20 * i - 14,
-      //   endPx - startPx,
-      //   18,
+      // context.strokeRect(
+      //   eventOriginX + eventStartPx,
+      //   eventsOrigin[1] - 18,
+      //   0,
+      //   eventOriginY - eventsOrigin[1] + 8,
+      // );
+      // context.strokeRect(
+      //   eventOriginX + eventEndPx,
+      //   eventsOrigin[1] - 18,
+      //   0,
+      //   eventOriginY - eventsOrigin[1] + 8,
       // );
     }
   },
