@@ -57,11 +57,19 @@ timeMin=${new Date(todayStart).toISOString()}&timeMax=${new Date(inAWeekEnd).toI
     },
   ).then((resp) => resp.json());
 
-  events = data.items.map((item) => ({
-    title: item.summary,
-    start: new Date(item.start.dateTime),
-    end: new Date(item.end.dateTime),
-  }));
+  events = data.items.map((item) => {
+    const start = new Date(item.start.dateTime);
+    const end = new Date(item.end.dateTime);
+    const startDayRatio = (start.getTime() % DAY_IN_MS) / DAY_IN_MS;
+    const endDayRatio = (end.getTime() % DAY_IN_MS) / DAY_IN_MS;
+    return {
+      title: item.summary,
+      start,
+      end,
+      startDayRatio,
+      endDayRatio,
+    };
+  });
 }
 
 refreshEvents();

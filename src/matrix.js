@@ -187,8 +187,8 @@ class DotMatrix {
   getPixelFromDotPosition(context, dotX, dotY) {
     const baseX = (context.canvas.width - this.widthPx) / 2;
     const baseY = (context.canvas.height - this.heightPx) / 2;
-    const pixelX = baseX + dotX * (DOT_SIZE_PX + DOT_SPACING_PX);
-    const pixelY = baseY + dotY * (DOT_SIZE_PX + DOT_SPACING_PX);
+    const pixelX = baseX + this.getPixelFromDot(dotX);
+    const pixelY = baseY + this.getPixelFromDot(dotY);
     return [pixelX, pixelY];
   }
 
@@ -212,6 +212,14 @@ class DotMatrix {
    */
   getDotFromPixel(pixelValue) {
     return Math.round(pixelValue / (DOT_SIZE_PX + DOT_SPACING_PX));
+  }
+
+  /**
+   * @param {number} dotValue
+   * @return {number} dot value
+   */
+  getPixelFromDot(dotValue) {
+    return dotValue * (DOT_SIZE_PX + DOT_SPACING_PX);
   }
 
   /**

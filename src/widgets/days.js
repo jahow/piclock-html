@@ -108,7 +108,9 @@ export const daysWidget = {
         currentDotY,
         dayWidth,
         context,
+        currentDate,
         events,
+        i === 0,
       );
 
       currentDotX += dayWidth + PADDING_DOTS;
@@ -201,19 +203,70 @@ export const daysWidget = {
     }
   },
 
-  renderDayAppointments(baseX, baseY, dayWidth, context, events) {
+  renderDayAppointments(
+    baseX,
+    baseY,
+    dayWidth,
+    context,
+    currentDateStart,
+    events,
+    showEventTime,
+  ) {
     const matrix = getMatrix();
-    const textOrigin = matrix.getPixelFromDotPosition(
+    const dayWidthPx = matrix.getPixelFromDot(dayWidth);
+    const eventsOrigin = matrix.getPixelFromDotPosition(
       context,
       baseX,
       baseY + 17,
     );
     context.font = '18px sans-serif';
-    context.fillStyle = 'hsl(47, 84%, 82%)';
-    context.strokeStyle = 'hsl(47, 84%, 82%)';
     for (let i = 0; i < events.length; i++) {
+      const eventOriginX = eventsOrigin[0];
+      const eventOriginY = eventsOrigin[1] + 20 * i;
       const event = events[i];
-      context.fillText(event.title, textOrigin[0], textOrigin[1] + 20 * i);
+      const eventStartPx = event.startDayRatio * dayWidthPx;
+      const eventEndPx = event.endDayRatio * dayWidthPx;
+      const titleWidthPx = context.measureText(event.title).width;
+      context.fillStyle = 'hsl(47, 84%, 82%)';
+
+      if (!showEventTime) {
+        context.fillText(event.title, eventOriginX, eventOriginY);
+        continue;
+      }
+
+      const textOriginX = eventOriginX + eventStartPx - 14 - titleWidthPx; // text on the left of the time bar
+      context.fillText(event.title, textOriginX, eventOriginY);
+      context.fillStyle = 'hsl(333,90%,38%)';
+      context.strokeStyle = 'hsl(333,90%,38%)';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(eventOriginX + eventStartPx, eventOriginY - 14);
+      context.lineTo(eventOriginX + eventEndPx, eventOriginY - 14);
+      context.lineTo(eventOriginX + eventEndPx + 8, eventOriginY - 6);
+      context.lineTo(eventOriginX + eventEndPx, eventOriginY + 2);
+      context.lineTo(eventOriginX + eventStartPx, eventOriginY + 2);
+      context.lineTo(eventOriginX + eventStartPx - 8, eventOriginY - 6);
+      context.lineTo(eventOriginX + eventStartPx, eventOriginY - 14);
+      context.closePath();
+      context.fill();
+      context.strokeRect(
+        eventOriginX + eventStartPx,
+        eventsOrigin[1] - 18,
+        0,
+        eventOriginY - eventsOrigin[1] + 8,
+      );
+      context.strokeRect(
+        eventOriginX + eventEndPx,
+        eventsOrigin[1] - 18,
+        0,
+        eventOriginY - eventsOrigin[1] + 8,
+      );
+      // context.fillRect(
+      //   textOrigin[0] + startPx,
+      //   textOrigin[1] + 20 * i - 14,
+      //   endPx - startPx,
+      //   18,
+      // );
     }
   },
 
