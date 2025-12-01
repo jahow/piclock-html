@@ -6,12 +6,25 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 function getAccessToken() {
   const accessToken = localStorage.getItem('google_access_token');
   if (accessToken) {
-    return accessToken;
+    const expireTime = localStorage.getItem('google_access_token_expires');
+    const isExpired = new Date().getTime() > parseInt(expireTime, 10);
+    if (!isExpired) {
+      return accessToken;
+    } else {
+      localStorage.removeItem('google_access_token');
+      localStorage.removeItem('google_access_token_expires');
+    }
   }
   if (window.location.hash.includes('access_token=')) {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const newToken = hashParams.get('access_token');
+    const expiresIn = hashParams.get('expires_in');
     localStorage.setItem('google_access_token', newToken);
+    localStorage.setItem(
+      'google_access_token_expires',
+      (new Date().getTime() + expiresIn * 1000).toString(),
+    );
+    window.location.hash = '';
     return newToken;
   }
 

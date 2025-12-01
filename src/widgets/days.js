@@ -219,7 +219,7 @@ export const daysWidget = {
 
   pointerDown(context, x, y) {
     const dotPos = getMatrix().getDotPositionFromPixel(context, x, y);
-    if (dotPos[1] < 18 || dotPos[1] > 18 + DAY_HEIGHT_DOTS + 6) {
+    if (dotPos[1] < 18) {
       return;
     }
     dragging = true;
