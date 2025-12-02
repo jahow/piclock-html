@@ -16,20 +16,20 @@ export const DOT_OVERLAY = /** @type {DotValue} */ (5);
  * @param {DotValue} dotValue
  * @return {string} color
  */
-function getDotColor(dotValue) {
+export function getDotColor(dotValue) {
   switch (dotValue) {
     case DOT_OFF:
       return 'hsl(41,76%,5%)';
     case DOT_NIGHT:
-      return 'hsl(236,15%,20%)';
+      return 'hsl(236, 12%, 20%)';
     case DOT_DAWN:
-      return 'hsl(190,24%,28%)';
+      return 'hsl(150, 16%, 24%)';
     case DOT_DAY:
-      return 'hsl(163,33%,36%)';
+      return 'hsl(55, 28%, 28%)';
     case DOT_ON:
       return 'hsl(47, 84%, 82%)';
     case DOT_OVERLAY:
-      return 'hsl(64,100%,87%)';
+      return 'hsl(148,100%,50%)';
   }
 }
 

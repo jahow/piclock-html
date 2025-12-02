@@ -5,8 +5,10 @@ import {
   DOT_NIGHT,
   DOT_OFF,
   DOT_ON,
+  DOT_OVERLAY,
   DOT_SIZE_PX,
   DOT_SPACING_PX,
+  getDotColor,
   getMatrix,
 } from '../matrix.js';
 import { getSymbolChainWidth, getSymbolsFromString } from './utils/symbols.js';
@@ -14,8 +16,9 @@ import { weatherSymbols } from './utils/symbols.definitions.js';
 import { getEventsOnDate, refreshEvents } from './utils/events.js';
 import { getLatitudeLongitude } from './utils/location.js';
 import { getForecast, refreshWeatherForecast } from './utils/weather.js';
+import { getRatioOfTimeInDay } from './utils/misc.js';
 
-const HIGHTLIGHT_COLOR = 'hsl(64,100%,46%)';
+const HIGHTLIGHT_COLOR = getDotColor(DOT_OVERLAY);
 
 const CURRENT_DAY_WIDTH_DOTS = 48;
 const OTHER_DAY_WIDTH_DOTS = 24;
@@ -77,7 +80,7 @@ export const daysWidget = {
     matrix.fillDots(0, 18, matrix.width, DAY_HEIGHT_DOTS + 6, DOT_OFF);
 
     const today = new Date();
-    const ratioDayAdvancement = (today.getTime() % DAY_IN_MS) / DAY_IN_MS;
+    const ratioDayAdvancement = getRatioOfTimeInDay(today);
     let currentDotX =
       Math.round(matrix.width / 2) -
       Math.round(CURRENT_DAY_WIDTH_DOTS * ratioDayAdvancement) +
@@ -146,17 +149,16 @@ export const daysWidget = {
     const matrix = getMatrix();
 
     const nightEndRow = Math.round(
-      dayWidth * ((sunriseTimes.nightEnd.getTime() % DAY_IN_MS) / DAY_IN_MS),
+      dayWidth * getRatioOfTimeInDay(sunriseTimes.nightEnd),
     );
     const nightStartRow = Math.round(
-      dayWidth * ((sunriseTimes.night.getTime() % DAY_IN_MS) / DAY_IN_MS),
+      dayWidth * getRatioOfTimeInDay(sunriseTimes.night),
     );
     const sunriseRow = Math.round(
-      dayWidth *
-        ((sunriseTimes.goldenHourEnd.getTime() % DAY_IN_MS) / DAY_IN_MS),
+      dayWidth * getRatioOfTimeInDay(sunriseTimes.sunrise),
     );
     const sunsetRow = Math.round(
-      dayWidth * ((sunriseTimes.goldenHour.getTime() % DAY_IN_MS) / DAY_IN_MS),
+      dayWidth * getRatioOfTimeInDay(sunriseTimes.sunset),
     );
 
     for (let i = 0; i < dayWidth; i++) {
@@ -262,7 +264,7 @@ export const daysWidget = {
     context.font = '18px sans-serif';
     for (let i = 0; i < events.length; i++) {
       const eventOriginX = eventsOrigin[0];
-      const eventOriginY = eventsOrigin[1] + 20 * i;
+      const eventOriginY = eventsOrigin[1] + 20 * i - 2;
       const event = events[i];
       const eventStartPx = event.startDayRatio * dayWidthPx;
       const eventEndPx = event.endDayRatio * dayWidthPx;
@@ -270,23 +272,23 @@ export const daysWidget = {
       context.fillStyle = 'hsl(47, 84%, 82%)';
 
       if (!showEventTime) {
-        context.fillText(event.title, eventOriginX, eventOriginY - 2);
+        context.fillText(event.title, eventOriginX, eventOriginY);
         continue;
       }
 
       const textOriginX = eventOriginX + eventStartPx - 14 - titleWidthPx; // text on the left of the time bar
-      context.fillText(event.title, textOriginX, eventOriginY - 2);
+      context.fillText(event.title, textOriginX, eventOriginY);
       context.fillStyle = HIGHTLIGHT_COLOR;
       context.strokeStyle = HIGHTLIGHT_COLOR;
       context.lineWidth = 2;
       context.beginPath();
-      context.moveTo(eventOriginX + eventStartPx, eventOriginY - 14);
-      context.lineTo(eventOriginX + eventEndPx, eventOriginY - 14);
-      context.lineTo(eventOriginX + eventEndPx + 8, eventOriginY - 6);
-      context.lineTo(eventOriginX + eventEndPx, eventOriginY + 2);
-      context.lineTo(eventOriginX + eventStartPx, eventOriginY + 2);
-      context.lineTo(eventOriginX + eventStartPx - 8, eventOriginY - 6);
-      context.lineTo(eventOriginX + eventStartPx, eventOriginY - 14);
+      context.moveTo(eventOriginX + eventStartPx, eventOriginY - 13);
+      context.lineTo(eventOriginX + eventEndPx, eventOriginY - 13);
+      context.lineTo(eventOriginX + eventEndPx + 8, eventOriginY - 5);
+      context.lineTo(eventOriginX + eventEndPx, eventOriginY + 3);
+      context.lineTo(eventOriginX + eventStartPx, eventOriginY + 3);
+      context.lineTo(eventOriginX + eventStartPx - 8, eventOriginY - 5);
+      context.lineTo(eventOriginX + eventStartPx, eventOriginY - 13);
       context.closePath();
       context.fill();
       // context.strokeRect(

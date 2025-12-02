@@ -1,3 +1,5 @@
+import { getRatioOfTimeInDay } from './misc.js';
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 /**
@@ -66,8 +68,8 @@ timeMin=${new Date(todayStart).toISOString()}&timeMax=${new Date(inAWeekEnd).toI
   events = data.items.map((item) => {
     const start = new Date(item.start.dateTime);
     const end = new Date(item.end.dateTime);
-    const startDayRatio = (start.getTime() % DAY_IN_MS) / DAY_IN_MS;
-    const endDayRatio = (end.getTime() % DAY_IN_MS) / DAY_IN_MS;
+    const startDayRatio = getRatioOfTimeInDay(start);
+    const endDayRatio = getRatioOfTimeInDay(end);
     return {
       title: item.summary,
       start,
@@ -77,8 +79,6 @@ timeMin=${new Date(todayStart).toISOString()}&timeMax=${new Date(inAWeekEnd).toI
     };
   });
 }
-
-refreshEvents();
 
 /**
  * @param {Date} date
