@@ -39,7 +39,13 @@ client_id=521298106728-pe2ffr13271rqdkru2gu7u78cf5valda.apps.googleusercontent.c
 
 let events = [];
 
-async function refreshEvents() {
+const INTERVAL = 60 * 1000 * 2; // 2 minutes
+let lastCheckTime = -1;
+
+export async function refreshEvents() {
+  if (Date.now() < lastCheckTime + INTERVAL) return;
+  lastCheckTime = Date.now();
+
   const accessToken = getAccessToken();
   console.log('google access token', accessToken);
 

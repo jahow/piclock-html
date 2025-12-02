@@ -11,7 +11,9 @@ import {
 } from '../matrix.js';
 import { getSymbolChainWidth, getSymbolsFromString } from './utils/symbols.js';
 import { weatherSymbols } from './utils/symbols.definitions.js';
-import { getEventsOnDate } from './utils/events.js';
+import { getEventsOnDate, refreshEvents } from './utils/events.js';
+import { getLatitudeLongitude } from './utils/location.js';
+import { getForecast, refreshWeatherForecast } from './utils/weather.js';
 
 const HIGHTLIGHT_COLOR = 'hsl(64,100%,46%)';
 
@@ -33,15 +35,14 @@ function getTodayTime() {
 let currentDay = null;
 const sunriseTimes = new Array(DAYS_RENDERED);
 
-const latLon = [48.8566, 2.3522]; // Paris coordinates
-
-function recomputeSunriseTimes() {
+async function recomputeSunriseTimes() {
   const todayTime = getTodayTime();
   if (currentDay === todayTime) {
     return;
   }
 
   currentDay = todayTime;
+  const latLon = await getLatitudeLongitude();
 
   for (let i = 0; i < DAYS_RENDERED; i++) {
     sunriseTimes[i] = SunCalc.getTimes(
@@ -61,6 +62,8 @@ let dragShiftPx = 0;
 export const daysWidget = {
   render(context) {
     recomputeSunriseTimes();
+    refreshWeatherForecast();
+    refreshEvents();
 
     if (!dragging) {
       dragShiftPx -= dragShiftPx * 0.3;
@@ -85,14 +88,16 @@ export const daysWidget = {
       const currentDate = new Date(today.getTime() + i * DAY_IN_MS);
 
       const dayWidth = i === 0 ? CURRENT_DAY_WIDTH_DOTS : OTHER_DAY_WIDTH_DOTS;
-      this.renderDayBlock(
-        currentDotX,
-        currentDotY,
-        dayWidth,
-        context,
-        i === 0 ? ratioDayAdvancement : -1,
-        sunriseTimes[i],
-      );
+      if (sunriseTimes[i]) {
+        this.renderDayBlock(
+          currentDotX,
+          currentDotY,
+          dayWidth,
+          context,
+          i === 0 ? ratioDayAdvancement : -1,
+          sunriseTimes[i],
+        );
+      }
       const dayName = WEEKDAY_NAMES[currentDate.getDay()];
       const dayNameSymbols = getSymbolsFromString(dayName);
       matrix.applySymbolChain(
@@ -105,7 +110,7 @@ export const daysWidget = {
       );
 
       // 3 weather points per day
-      this.renderDayWeather(currentDotX, currentDotY, dayWidth);
+      this.renderDayWeather(currentDotX, currentDotY, dayWidth, i);
 
       const events = getEventsOnDate(currentDate);
       this.renderDayAppointments(
@@ -184,7 +189,8 @@ export const daysWidget = {
       baseX + dayWidth * dayAdvancementRatio,
       baseY,
     );
-    baseCoords[0] += DOT_SIZE_PX / 2 + DOT_SPACING_PX / 2;
+    baseCoords[0] += Math.floor(DOT_SIZE_PX / 2 - DOT_SPACING_PX / 2);
+    baseCoords[1] += Math.floor(-DOT_SPACING_PX / 2);
     context.fillStyle = HIGHTLIGHT_COLOR;
     const dayHeightPx = matrix.getPixelFromDot(DAY_HEIGHT_DOTS);
     context.beginPath();
@@ -200,22 +206,26 @@ export const daysWidget = {
    * @param {number} baseX
    * @param {number} baseY
    * @param {number} dayWidth
+   * @param {number} dayIndex
    */
-  renderDayWeather(baseX, baseY, dayWidth) {
+  renderDayWeather(baseX, baseY, dayWidth, dayIndex) {
+    const dayForecast = getForecast(dayIndex);
+
     const matrix = getMatrix();
     const weatherDotY = baseY + 1;
     const weatherIconWidth = weatherSymbols.baseWidth;
     const weatherIconShift = Math.round(weatherIconWidth / 2);
 
-    const weatherIconCount = dayWidth > 40 ? 3 : 1;
+    const shownForecasts = dayWidth > 40 ? [0, 1, 2] : [1];
+    const weatherIconCount = shownForecasts.length;
     const weatherDotXOffset = Math.round(dayWidth / weatherIconCount / 2);
 
-    // TEMP
-    const weather = 'cloud';
-    const temp = -90;
-    const tempSymbols = getSymbolsFromString(temp.toFixed(0));
-
     for (let i = 0; i < weatherIconCount; i++) {
+      const forecast = dayForecast?.[shownForecasts[i]] ?? ['empty', null];
+      const weather = forecast[0];
+      const temp = forecast[1] !== null ? forecast[1].toFixed(0) : '';
+      const tempSymbols = getSymbolsFromString(temp);
+
       const symbolX = baseX + weatherDotXOffset * (1 + i * 2);
       matrix.applySymbol(
         weatherSymbols.symbols[weather],

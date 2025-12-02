@@ -1,130 +1,91 @@
-import {
-  getSymbolChainValue,
-  getSymbolChainWidth,
-  getSymbolValue,
-} from './symbols.js';
-import { textSymbols, weatherSymbols } from './symbols.definitions.js';
-import { getValue } from './misc.js';
+import { getLatitudeLongitude } from './location.js';
 
 const INTERVAL = 60 * 1000 * 15; // 15 minutes
 const COUNT = 5;
-const LOCATION = 'sonnaz';
 const KEY = 'a48634ed18dac4fc58477ba9a2e9442c';
 
+let lastCheckTime = -1;
+
 /**
- * @param {VariableNumber} baseX
- * @param {VariableNumber} baseY
- * @return {Widget}
+ * @typedef {[string, number]} SingleForecast
  */
-export function weatherWidget(baseX, baseY) {
-  const spacing = 6;
+/**
+ * @typedef {[SingleForecast, SingleForecast, SingleForecast]} DayForecast
+ */
 
-  let lastCheckTime = 0;
+/** @type {Array<null|[DayForecast]>} */
+const forecasts = new Array(COUNT).fill(null);
 
-  /** @type {Array<null|[string, number]>} */
-  const forecasts = [null, null, null, null, null];
-  // const forecasts = [
-  //   null,
-  //   ['mist', 12],
-  //   ['cloud+', -34],
-  //   ['rain', 4],
-  //   ['snow', -12],
-  // ];
+export async function refreshWeatherForecast() {
+  if (Date.now() < lastCheckTime + INTERVAL) return;
 
-  return {
-    render(x, y) {
-      let value = 0;
-      let currentX = getValue(baseX);
-      let currentY = getValue(baseY);
+  lastCheckTime = Date.now();
+  const [lat, lon] = await getLatitudeLongitude();
 
-      for (let i = 0; i < COUNT; i++) {
-        const forecast = forecasts[i];
-        const icon = forecast === null ? 'empty' : forecast[0];
-        const temp = forecast === null ? 0 : forecast[1];
-        const tempKeys = temp.toString(10).split('');
-        const tempWidth = getSymbolChainWidth(textSymbols, tempKeys, 1);
+  fetch(
+    `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${KEY}`,
+  )
+    .then((resp) => resp.json())
+    .then((resp) => {
+      const date = new Date();
 
-        value += getSymbolValue(
-          weatherSymbols,
-          icon,
-          x - currentX,
-          y - currentY,
-        );
-        value += getSymbolChainValue(
-          textSymbols,
-          tempKeys,
-          1,
-          x - 4 - currentX + Math.round(tempWidth / 2),
-          y - currentY - 8,
-        );
-        currentX += weatherSymbols.baseWidth + spacing;
-      }
-
-      return value > 0 ? 1 : 0;
-    },
-    update() {
-      if (Date.now() < lastCheckTime + INTERVAL) return;
-
-      lastCheckTime = Date.now();
-
-      fetch(
-        'https://api.openweathermap.org/data/2.5/forecast?q=' +
-          LOCATION +
-          '&appid=' +
-          KEY,
-      )
-        .then((resp) => resp.json())
-        .then((resp) => {
-          const date = new Date();
-          date.setUTCHours(12);
-          date.setMinutes(0);
-          date.setSeconds(0);
-          date.setMilliseconds(0);
-
-          // loop on forecast items to get weather at midday
-          for (let j = 0; j < COUNT; j++) {
-            for (let i = 0; i < resp.list.length; i++) {
-              const item = resp.list[i];
-
-              if (item.dt === date.getTime() / 1000) {
-                const temp = Math.round(item.main.temp - 273.15);
-                const icon = item.weather[0].icon.substring(0, 2);
-                forecasts[j] = ['missing', temp];
-                switch (icon) {
-                  case '01':
-                    forecasts[j][0] = 'clear';
-                    break;
-                  case '02':
-                    forecasts[j][0] = 'cloud';
-                    break;
-                  case '03':
-                    forecasts[j][0] = 'cloud+';
-                    break;
-                  case '04':
-                    forecasts[j][0] = 'cloud++';
-                    break;
-                  case '09':
-                    forecasts[j][0] = 'rain';
-                    break;
-                  case '10':
-                    forecasts[j][0] = 'rain+';
-                    break;
-                  case '11':
-                    forecasts[j][0] = 'rain++';
-                    break;
-                  case '13':
-                    forecasts[j][0] = 'snow';
-                    break;
-                  case '50':
-                    forecasts[j][0] = 'mist';
-                    break;
-                }
-                break;
-              }
-            }
-            date.setDate(date.getDate() + 1);
+      // loop on forecast items to get weather at midday
+      for (let j = 0; j < COUNT; j++) {
+        const dayForecast = [
+          ['empty', null],
+          ['empty', null],
+          ['empty', null],
+        ];
+        for (let i = 0; i < resp.list.length; i++) {
+          const item = resp.list[i];
+          const time = new Date(item.dt * 1000);
+          if (time.getDay() !== (date.getDay() + j) % 7) {
+            continue;
           }
-        });
-    },
-  };
+          const forecastSlot = time.getUTCHours() / 6;
+          if (forecastSlot !== 1 && forecastSlot !== 2 && forecastSlot !== 3) {
+            continue;
+          }
+          const temp = Math.round(item.main.temp - 273.15);
+          const icon = item.weather[0].icon.substring(0, 2);
+          let weather = 'empty';
+          switch (icon) {
+            case '01':
+              weather = 'clear';
+              break;
+            case '02':
+              weather = 'cloud';
+              break;
+            case '03':
+              weather = 'cloud+';
+              break;
+            case '04':
+              weather = 'cloud++';
+              break;
+            case '09':
+              weather = 'rain';
+              break;
+            case '10':
+              weather = 'rain+';
+              break;
+            case '11':
+              weather = 'rain++';
+              break;
+            case '13':
+              weather = 'snow';
+              break;
+            case '50':
+              weather = 'mist';
+              break;
+          }
+          dayForecast[forecastSlot - 1] = [weather, temp];
+        }
+        forecasts[j] = dayForecast;
+      }
+    });
+}
+
+export function getForecast(dayIndex) {
+  if (dayIndex < 0 || dayIndex >= COUNT) return null;
+  return forecasts[dayIndex];
 }
