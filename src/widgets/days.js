@@ -228,7 +228,7 @@ export const daysWidget = {
       const temp = forecast[1] !== null ? forecast[1].toFixed(0) : '';
       const tempSymbols = getSymbolsFromString(temp);
 
-      const symbolX = baseX + weatherDotXOffset * (1 + i * 2);
+      const symbolX = baseX + weatherDotXOffset * (1 + i * 2) + 1;
       matrix.applySymbol(
         weatherSymbols.symbols[weather],
         symbolX - weatherIconShift,
