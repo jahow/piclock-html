@@ -7,6 +7,7 @@ export const DOT_DAWN = /** @type {DotValue} */ (2);
 export const DOT_DAY = /** @type {DotValue} */ (3);
 export const DOT_ON = /** @type {DotValue} */ (4);
 export const DOT_OVERLAY = /** @type {DotValue} */ (5);
+export const DOT_MUTED = /** @type {DotValue} */ (6);
 
 /**
  * @typedef {DOT_OFF|DOT_ON|DOT_NIGHT|DOT_DAY|DOT_DAWN|DOT_OVERLAY} DotValue
@@ -26,6 +27,8 @@ export function getDotColor(dotValue) {
       return 'hsl(150, 16%, 24%)';
     case DOT_DAY:
       return 'hsl(55, 28%, 28%)';
+    case DOT_MUTED:
+      return 'hsl(65 29% 34%)';
     case DOT_ON:
       return 'hsl(47, 84%, 82%)';
     case DOT_OVERLAY:
@@ -108,8 +111,15 @@ class DotMatrix {
    * @param {number} xPosition
    * @param {number} yPosition
    * @param {boolean} clearBackground
+   * @param {DotValue} dotValue
    */
-  applySymbol(symbol, xPosition, yPosition, clearBackground = true) {
+  applySymbol(
+    symbol,
+    xPosition,
+    yPosition,
+    clearBackground = true,
+    dotValue = DOT_ON,
+  ) {
     for (let y = 0; y < symbol.height; y++) {
       for (let x = 0; x < symbol.width; x++) {
         const symbolIndex = y * symbol.width + x;
@@ -117,11 +127,13 @@ class DotMatrix {
         if (!targetValue && !clearBackground) {
           continue;
         }
-        this.setDotValue(
-          xPosition + x,
-          yPosition + y,
-          targetValue ? DOT_ON : DOT_OFF,
-        );
+        let targetDotValue = DOT_OFF;
+        if (targetValue === 1) {
+          targetDotValue = DOT_MUTED;
+        } else if (targetValue === 2) {
+          targetDotValue = dotValue;
+        }
+        this.setDotValue(xPosition + x, yPosition + y, targetDotValue);
       }
     }
   }
@@ -132,11 +144,24 @@ class DotMatrix {
    * @param {number} xPosition
    * @param {number} yPosition
    * @param {boolean} clearBackground
+   * @param {DotValue} dotValue
    */
-  applySymbolChain(symbols, xPosition, yPosition, clearBackground = true) {
+  applySymbolChain(
+    symbols,
+    xPosition,
+    yPosition,
+    clearBackground = true,
+    dotValue = DOT_ON,
+  ) {
     let startX = xPosition;
     for (let i = 0; i < symbols.length; i++) {
-      this.applySymbol(symbols[i], startX, yPosition, clearBackground);
+      this.applySymbol(
+        symbols[i],
+        startX,
+        yPosition,
+        clearBackground,
+        dotValue,
+      );
       startX += symbols[i].width + 1;
     }
   }

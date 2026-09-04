@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Symbol
- * @property {number[]} dots
+ * @property {number[]} dots 0 is empty, 1 is muted and 2 is on
  * @property {number} width
  * @property {number} height
  */
@@ -20,7 +20,11 @@ function processSymbol(symbolAsStrings) {
       ...curr
         .padEnd(symbolWidth, ' ')
         .split('')
-        .map((char) => (char !== ' ' ? 1 : 0)),
+        .map((char) => {
+          if (char === ' ') return 0;
+          if (char === '.') return 1;
+          return 2;
+        }),
     ];
   }, []);
   return {
@@ -764,6 +768,50 @@ export const weatherSymbols = {
       '       ',
       '       ',
       '       ',
+    ]),
+  },
+};
+
+/** @type {SymbolSet} */
+export const iconSymbols = {
+  baseWidth: 7,
+  height: 7,
+  symbols: {
+    radio: processSymbol([
+      '       ',
+      '    .  ',
+      '  xxx  ',
+      ' x   x ',
+      ' . . . ',
+      '  ...  ',
+      '       ',
+    ]),
+    alarm: processSymbol([
+      '       ',
+      '   .   ',
+      '  ...  ',
+      '  x.x  ',
+      ' x   x ',
+      '  ...  ',
+      '       ',
+    ]),
+  },
+};
+/** @type {SymbolSet} */
+export const largeIconSymbols = {
+  baseWidth: 9,
+  height: 9,
+  symbols: {
+    button: processSymbol([
+      '  .xxx.  ',
+      ' .     . ',
+      '.       .',
+      'x       x',
+      'x       x',
+      '.       .',
+      '.       .',
+      ' .     . ',
+      '  .....  ',
     ]),
   },
 };
