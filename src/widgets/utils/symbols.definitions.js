@@ -47,9 +47,9 @@ export const clockSymbols = {
   height: 15,
   symbols: {
     0: processSymbol([
-      ' xxxxxxx ',
+      ' .xxxxx. ',
+      '.xxxxxxx.',
       'xxxxxxxxx',
-      'xxxxxxxxx',
       'xxx   xxx',
       'xxx   xxx',
       'xxx   xxx',
@@ -60,8 +60,8 @@ export const clockSymbols = {
       'xxx   xxx',
       'xxx   xxx',
       'xxxxxxxxx',
-      'xxxxxxxxx',
-      ' xxxxxxx ',
+      '.xxxxxxx.',
+      ' .xxxxx. ',
     ]),
     1: processSymbol([
       '   xxxx. ',
@@ -146,7 +146,7 @@ export const clockSymbols = {
       '      xxx',
       'xxxxxxxxx',
       'xxxxxxxx.',
-      'xxxxxxx. ',
+      '.xxxxxx. ',
     ]),
     6: processSymbol([
       ' .xxxxx. ',
@@ -155,7 +155,7 @@ export const clockSymbols = {
       'xxx      ',
       'xxx      ',
       'xxx      ',
-      'xxx.xxx. ',
+      'xxxxxxx. ',
       'xxxxxxxx.',
       'xxxxxxxxx',
       'xxx   xxx',
@@ -214,7 +214,7 @@ export const clockSymbols = {
       '      xxx',
       'xxxxxxxxx',
       'xxxxxxxx.',
-      'xxxxxxx. ',
+      '.xxxxxx. ',
     ]),
     ':': processSymbol([
       '   ',
