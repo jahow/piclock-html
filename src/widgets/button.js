@@ -35,13 +35,22 @@ export function createButtonWidget(posX, posY, icon, onActivate) {
         dotPos[0] <= posX + 9
       ) {
         active = true;
-        onActivate();
       } else {
         active = false;
       }
     },
 
     pointerUp(context, x, y) {
+      const dotPos = getMatrix().getDotPositionFromPixel(context, x, y);
+      if (
+        dotPos[1] >= posY &&
+        dotPos[1] <= posY + 9 &&
+        dotPos[0] >= posX &&
+        dotPos[0] <= posX + 9 &&
+        active
+      ) {
+        onActivate();
+      }
       active = false;
     },
   };

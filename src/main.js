@@ -1,4 +1,4 @@
-import { addWidget } from './display.js';
+import { addWidget, setPage } from './display.js';
 import { clockWidget } from './widgets/clock.js';
 import { daysWidget } from './widgets/days.js';
 import { createButtonWidget } from './widgets/button.js';
@@ -8,7 +8,9 @@ import { getMatrix } from './matrix.js';
 
 addWidget(clockWidget);
 addWidget(daysWidget);
-addWidget(createButtonWidget(2, 4, iconSymbols.symbols.radio, () => {}));
+addWidget(
+  createButtonWidget(2, 4, iconSymbols.symbols.radio, () => setPage('radio')),
+);
 addWidget(
   createButtonWidget(
     getMatrix().width - 11,
@@ -17,3 +19,5 @@ addWidget(
     () => {},
   ),
 );
+
+addWidget(clockWidget, 'radio');

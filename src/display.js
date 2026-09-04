@@ -20,14 +20,26 @@ fps.style.left = '0';
 
 document.body.appendChild(fps);
 
-/** @type {Widget[]} */
-const widgets = [];
+/** @type {Record<string, Widget[]>} */
+const widgetsPerPage = {
+  default: [],
+};
+let currentPage = 'default';
 
 /**
  * @param {Widget} widget
+ * @param {string} page
  */
-export function addWidget(widget) {
-  widgets.push(widget);
+export function addWidget(widget, page = 'default') {
+  if (!widgetsPerPage[page]) {
+    widgetsPerPage[page] = [];
+  }
+  widgetsPerPage[page].push(widget);
+}
+
+export function setPage(pageName = 'default') {
+  getMatrix().clear();
+  currentPage = pageName;
 }
 
 let lastTime = Date.now();
@@ -63,6 +75,7 @@ function render() {
 
   // widgets are drawn to a canvas on top of the dot matrix
   drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  const widgets = widgetsPerPage[currentPage];
   for (let i = 0; i < widgets.length; i++) {
     const widget = widgets[i];
     widget.render(drawContext);
@@ -111,8 +124,8 @@ render();
 // handle events
 const prevPointerPos = [0, 0];
 canvas.addEventListener('pointerdown', (event) => {
-  for (let i = 0; i < widgets.length; i++) {
-    const widget = widgets[i];
+  for (let i = 0; i < widgetsPerPage[currentPage].length; i++) {
+    const widget = widgetsPerPage[currentPage][i];
     if (!('pointerDown' in widget)) continue;
     widget.pointerDown(context, event.clientX, event.clientY);
   }
@@ -120,15 +133,15 @@ canvas.addEventListener('pointerdown', (event) => {
   prevPointerPos[1] = event.clientY;
 });
 canvas.addEventListener('pointerup', (event) => {
-  for (let i = 0; i < widgets.length; i++) {
-    const widget = widgets[i];
+  for (let i = 0; i < widgetsPerPage[currentPage].length; i++) {
+    const widget = widgetsPerPage[currentPage][i];
     if (!('pointerUp' in widget)) continue;
     widget.pointerUp(context, event.clientX, event.clientY);
   }
 });
 canvas.addEventListener('pointermove', (event) => {
-  for (let i = 0; i < widgets.length; i++) {
-    const widget = widgets[i];
+  for (let i = 0; i < widgetsPerPage[currentPage].length; i++) {
+    const widget = widgetsPerPage[currentPage][i];
     if (!('pointerMove' in widget)) continue;
     widget.pointerMove(
       context,

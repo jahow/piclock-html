@@ -198,6 +198,13 @@ class DotMatrix {
   }
 
   /**
+   * @param {DotValue} value
+   */
+  clear(value = DOT_OFF) {
+    this.fillDots(0, 0, this.width, this.height, value);
+  }
+
+  /**
    * @param {CanvasRenderingContext2D} context
    * @param {number} dotX
    * @param {number} dotY
