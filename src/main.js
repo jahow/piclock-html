@@ -1,11 +1,19 @@
 import { addWidget } from './display.js';
 import { clockWidget } from './widgets/clock.js';
 import { daysWidget } from './widgets/days.js';
-import { buttonRadioWidget } from './widgets/button_radio.js';
-import { buttonAlarmWidget } from './widgets/button_alarm.js';
+import { createButtonWidget } from './widgets/button.js';
 import './display.js';
+import { iconSymbols } from './widgets/utils/symbols.definitions.js';
+import { getMatrix } from './matrix.js';
 
 addWidget(clockWidget);
 addWidget(daysWidget);
-addWidget(buttonRadioWidget);
-addWidget(buttonAlarmWidget);
+addWidget(createButtonWidget(2, 4, iconSymbols.symbols.radio, () => {}));
+addWidget(
+  createButtonWidget(
+    getMatrix().width - 11,
+    4,
+    iconSymbols.symbols.alarm,
+    () => {},
+  ),
+);

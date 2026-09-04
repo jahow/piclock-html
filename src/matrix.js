@@ -111,15 +111,9 @@ class DotMatrix {
    * @param {number} xPosition
    * @param {number} yPosition
    * @param {boolean} clearBackground
-   * @param {DotValue} dotValue
+   * @param {DotValue} dotValue Force dots to this value
    */
-  applySymbol(
-    symbol,
-    xPosition,
-    yPosition,
-    clearBackground = true,
-    dotValue = DOT_ON,
-  ) {
+  applySymbol(symbol, xPosition, yPosition, clearBackground = true, dotValue) {
     for (let y = 0; y < symbol.height; y++) {
       for (let x = 0; x < symbol.width; x++) {
         const symbolIndex = y * symbol.width + x;
@@ -129,9 +123,9 @@ class DotMatrix {
         }
         let targetDotValue = DOT_OFF;
         if (targetValue === 1) {
-          targetDotValue = DOT_MUTED;
+          targetDotValue = dotValue ?? DOT_MUTED;
         } else if (targetValue === 2) {
-          targetDotValue = dotValue;
+          targetDotValue = dotValue ?? DOT_ON;
         }
         this.setDotValue(xPosition + x, yPosition + y, targetDotValue);
       }
