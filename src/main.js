@@ -5,6 +5,7 @@ import { createButtonWidget } from './widgets/button.js';
 import './display.js';
 import { iconSymbols } from './widgets/utils/symbols.definitions.js';
 import { getMatrix } from './matrix.js';
+import { radioGlobeWidget } from './widgets/radio-globe.js';
 
 addWidget(clockWidget);
 addWidget(daysWidget);
@@ -20,4 +21,7 @@ addWidget(
   ),
 );
 
-addWidget(clockWidget, 'radio');
+addWidget(radioGlobeWidget, 'radio');
+
+// temp
+setPage('radio');
