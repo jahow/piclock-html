@@ -795,6 +795,24 @@ export const iconSymbols = {
       '  ...  ',
       '       ',
     ]),
+    leave_right: processSymbol([
+      '       ',
+      '  x    ',
+      '  xx   ',
+      '  xxx  ',
+      '  ..   ',
+      '  .    ',
+      '       ',
+    ]),
+    ok: processSymbol([
+      '       ',
+      '       ',
+      '     x ',
+      ' x  x. ',
+      ' ....  ',
+      '  ..   ',
+      '       ',
+    ]),
   },
 };
 /** @type {SymbolSet} */

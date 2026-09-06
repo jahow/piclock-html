@@ -22,6 +22,10 @@ addWidget(
 );
 
 addWidget(radioGlobeWidget, 'radio');
+addWidget(
+  createButtonWidget(2, 4, iconSymbols.symbols.ok, () => setPage('default')),
+  'radio',
+);
 
 // temp
 setPage('radio');
