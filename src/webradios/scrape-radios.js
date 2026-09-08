@@ -15,7 +15,7 @@ async function writeGeoJSON() {
       if (radio.geo_lat && radio.geo_long) {
         geometry = {
           type: 'Point',
-          coordinates: [radio.geo_lat, radio.geo_long],
+          coordinates: [radio.geo_long, radio.geo_lat],
         };
       }
       const regionCode = radio.iso_3166_2 || radio.countrycode;
@@ -23,7 +23,7 @@ async function writeGeoJSON() {
       if (region) {
         geometry = {
           type: 'Point',
-          coordinates: [region.lat, region.lng],
+          coordinates: [region.lng, region.lat],
         };
       }
 
@@ -49,7 +49,7 @@ async function writeGeoJSON() {
     features,
   };
   await fs.writeFile(
-    path.join(import.meta.dirname, 'webradios.geojson'),
+    path.join(import.meta.dirname, 'webradios.json'),
     JSON.stringify(geojson),
   );
   console.log(

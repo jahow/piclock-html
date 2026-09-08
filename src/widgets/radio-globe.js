@@ -1,12 +1,16 @@
 import * as naturalEarthCoastlines from '../webradios/ne_50m_coastline.json';
 import * as naturalEarthBoundariesLand from '../webradios/ne_50m_admin_0_boundary_lines_land.json';
 import * as webRadios from '../webradios/webradios.json';
-import { DOT_MUTED, DOT_ON, getDotColor } from '../matrix.js';
+import {
+  DOT_MUTED,
+  DOT_ON,
+  DOT_OVERLAY,
+  getDotColor,
+  getMatrix,
+} from '../matrix.js';
 import { getLatitudeLongitude } from './utils/location.js';
 
 const stream = 'http://195.150.20.242:8000/rmf_fm';
-
-console.log(webRadios.features[0]);
 
 const audioEl = /** @type {HTMLAudioElement} */ (
   document.createElement('audio')
@@ -28,7 +32,7 @@ function toRad(degrees) {
 }
 
 function projectPoint(context, lon, lat) {
-  const radius = 300;
+  const radius = 2000;
   const centerLonRad = toRad(centerLon);
   const centerLatRad = toRad(centerLat);
   const latRad = toRad(lat);
@@ -70,17 +74,6 @@ function projectPoint(context, lon, lat) {
     pXb * radius + context.canvas.width / 2,
     context.canvas.height / 2 - pZb * radius,
   ];
-
-  // const theta = angleLon;
-  // const phi =
-  //   -toRad(lat) +
-  //   toRad(centerLat) +
-  //   (Math.PI / 2 - toRad(lat)) * Math.cos(angleLon);
-  // // const phi = angleLat;
-  //
-  // const x = Math.cos(phi) * radius * Math.sin(theta);
-  // const y = Math.sin(phi) * radius;
-  // return [x + context.canvas.width / 2, context.canvas.height / 2 - y];
 }
 
 function drawLine(context, coordinates) {
@@ -112,14 +105,22 @@ function drawMultiLine(context, coordinates) {
   }
 }
 
+function drawPoint(context, coordinates) {
+  const [x, y] = projectPoint(context, ...coordinates);
+  context.beginPath();
+  context.arc(x, y, 3, 0, 2 * Math.PI);
+  context.fill();
+}
+
 function drawFeatureCollection(context, collection) {
   for (let i = 0; i < collection.features.length; i++) {
     const feature = collection.features[i];
     if (feature.geometry.type === 'LineString') {
       drawLine(context, feature.geometry.coordinates);
     } else if (feature.geometry.type === 'MultiLineString') {
-      // console.log('drawing multiline');
       drawMultiLine(context, feature.geometry.coordinates);
+    } else if (feature.geometry.type === 'Point') {
+      drawPoint(context, feature.geometry.coordinates);
     } else {
       console.log('could not draw that');
     }
@@ -131,17 +132,31 @@ function drawFeatureCollection(context, collection) {
  */
 export const radioGlobeWidget = {
   render(context) {
-    // const matrix = getMatrix();
-    // matrix.clear();
-    // context.font = '18px sans-serif';
-    // context.fillStyle = 'hsl(47, 84%, 82%)';
-    // context.fillText('hello world', 100, 100);
+    // create clipped regions for buttons
+    context.save();
+    const matrix = getMatrix();
+    context.beginPath();
+    context.rect(0, 0, context.canvas.width, context.canvas.height);
+    context.arc(
+      matrix.getPixelFromDot(6.5),
+      matrix.getPixelFromDot(8.5),
+      matrix.getPixelFromDot(4.6),
+      0,
+      Math.PI * 2,
+      true,
+    );
+    context.clip();
+
     context.strokeStyle = getDotColor(DOT_ON);
     context.lineWidth = 1;
     drawFeatureCollection(context, naturalEarthCoastlines);
     context.strokeStyle = getDotColor(DOT_MUTED);
     context.lineWidth = 1;
     drawFeatureCollection(context, naturalEarthBoundariesLand);
+    context.fillStyle = getDotColor(DOT_OVERLAY);
+    drawFeatureCollection(context, webRadios);
+
+    context.restore();
   },
 
   pointerDown(context, x, y) {
@@ -152,8 +167,8 @@ export const radioGlobeWidget = {
     if (!panning) {
       return;
     }
-    centerLon += (prevX - x) / 4;
-    centerLat += (y - prevY) / 4;
+    centerLon += (prevX - x) / 16;
+    centerLat += (y - prevY) / 16;
     if (centerLon < -180) {
       centerLon += 360;
     } else if (centerLon > 180) {
