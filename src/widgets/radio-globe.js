@@ -3,6 +3,7 @@ import * as naturalEarthBoundariesLand from '../webradios/ne_50m_admin_0_boundar
 import * as webRadios from '../webradios/webradios.json';
 import {
   DOT_MUTED,
+  DOT_OFF,
   DOT_ON,
   DOT_OVERLAY,
   getDotColor,
@@ -112,6 +113,20 @@ function drawPoint(context, coordinates) {
   context.fill();
 }
 
+function drawCluster(context, coordinates, radiosCount) {
+  const [x, y] = projectPoint(context, ...coordinates);
+  const radius = 8 + 3 * Math.floor(Math.log10(radiosCount));
+  context.beginPath();
+  context.arc(x, y, radius, 0, 2 * Math.PI);
+  context.fill();
+  context.save();
+  context.fillStyle = getDotColor(DOT_OFF);
+  context.strokeStyle = getDotColor(DOT_OFF) + ' / 50%';
+  context.strokeText(radiosCount.toString(), x, y + 5);
+  context.fillText(radiosCount.toString(), x, y + 5);
+  context.restore();
+}
+
 function drawFeatureCollection(context, collection) {
   for (let i = 0; i < collection.features.length; i++) {
     const feature = collection.features[i];
@@ -119,6 +134,15 @@ function drawFeatureCollection(context, collection) {
       drawLine(context, feature.geometry.coordinates);
     } else if (feature.geometry.type === 'MultiLineString') {
       drawMultiLine(context, feature.geometry.coordinates);
+    } else if (
+      feature.geometry.type === 'Point' &&
+      feature.properties.radioCount
+    ) {
+      drawCluster(
+        context,
+        feature.geometry.coordinates,
+        feature.properties.radioCount,
+      );
     } else if (feature.geometry.type === 'Point') {
       drawPoint(context, feature.geometry.coordinates);
     } else {
@@ -147,6 +171,11 @@ export const radioGlobeWidget = {
     );
     context.clip();
 
+    // context.fillStyle = 'red';
+    // context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+
+    context.font = 'bold 14px sans-serif';
+    context.textAlign = 'center';
     context.strokeStyle = getDotColor(DOT_ON);
     context.lineWidth = 1;
     drawFeatureCollection(context, naturalEarthCoastlines);
