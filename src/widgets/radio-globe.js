@@ -21,6 +21,8 @@ audioEl.src = stream;
 
 let centerLon = 0;
 let centerLat = 0;
+let panDragLon = null;
+let panDragLat = null;
 let panning = false;
 
 getLatitudeLongitude().then(([lat, lon]) => {
@@ -31,13 +33,31 @@ getLatitudeLongitude().then(([lat, lon]) => {
 function toRad(degrees) {
   return (degrees * Math.PI) / 180;
 }
+function toDeg(radius) {
+  return (radius * 180) / Math.PI;
+}
+
+let zoomLevel = 3;
+let targetZoomLevel = zoomLevel;
+
+export function zoomIn() {
+  targetZoomLevel = Math.min(9, targetZoomLevel + 1);
+}
+export function zoomOut() {
+  targetZoomLevel = Math.max(1, targetZoomLevel - 1);
+}
+
+function getRadius() {
+  return 300 * Math.pow(2, zoomLevel - 1);
+}
 
 function projectPoint(context, lon, lat) {
-  const radius = 2000;
+  const radius = getRadius();
   const centerLonRad = toRad(centerLon);
   const centerLatRad = toRad(centerLat);
   const latRad = toRad(lat);
   const lonRad = toRad(lon);
+
   // compute xyz of point on sphere
   const pX = Math.cos(latRad) * Math.cos(lonRad - Math.PI / 2);
   const pY = Math.cos(latRad) * Math.sin(lonRad - Math.PI / 2);
@@ -75,6 +95,40 @@ function projectPoint(context, lon, lat) {
     pXb * radius + context.canvas.width / 2,
     context.canvas.height / 2 - pZb * radius,
   ];
+}
+
+// this returns [lon, lat]
+function unProjectPoint(context, x, y) {
+  const radius = getRadius();
+  const fromCenterXNormalized = (x - context.canvas.width / 2) / radius;
+  const fromCenterYNormalized = (context.canvas.height / 2 - y) / radius;
+  if (
+    fromCenterXNormalized * fromCenterXNormalized +
+      fromCenterYNormalized * fromCenterYNormalized >=
+    1
+  ) {
+    return [NaN, NaN];
+  }
+  panning = true;
+  let phi = Math.acos(fromCenterXNormalized);
+  const theta = Math.acos(fromCenterYNormalized);
+  const result = [
+    centerLon - toDeg(phi - Math.PI / 2),
+    centerLat + toDeg(Math.PI / 2 - theta),
+  ];
+  if (result[1] > 90) {
+    result[1] = 180 - result[1];
+    result[0] += 180;
+  } else if (result[1] < -90) {
+    result[1] = -180 - result[1];
+    result[0] += 180;
+  }
+  if (result[0] > 180) {
+    result[0] -= 360;
+  } else if (result[0] < -180) {
+    result[0] += 360;
+  }
+  return result;
 }
 
 function drawLine(context, coordinates) {
@@ -156,11 +210,31 @@ function drawFeatureCollection(context, collection) {
  */
 export const radioGlobeWidget = {
   render(context) {
+    // update zoom level
+    zoomLevel += (targetZoomLevel - zoomLevel) * 0.2;
+
     // create clipped regions for buttons
     context.save();
     const matrix = getMatrix();
     context.beginPath();
     context.rect(0, 0, context.canvas.width, context.canvas.height);
+    context.moveTo(200, 200);
+    context.arc(
+      matrix.getPixelFromDot(5.5),
+      matrix.getPixelFromDot(30.5),
+      matrix.getPixelFromDot(3.3),
+      0,
+      Math.PI * 2,
+      true,
+    );
+    context.arc(
+      matrix.getPixelFromDot(5.5),
+      matrix.getPixelFromDot(21.5),
+      matrix.getPixelFromDot(3.3),
+      0,
+      Math.PI * 2,
+      true,
+    );
     context.arc(
       matrix.getPixelFromDot(6.5),
       matrix.getPixelFromDot(8.5),
@@ -170,9 +244,6 @@ export const radioGlobeWidget = {
       true,
     );
     context.clip();
-
-    // context.fillStyle = 'red';
-    // context.fillRect(0, 0, context.canvas.width, context.canvas.height);
 
     context.font = 'bold 14px sans-serif';
     context.textAlign = 'center';
@@ -185,11 +256,23 @@ export const radioGlobeWidget = {
     context.fillStyle = getDotColor(DOT_OVERLAY);
     drawFeatureCollection(context, webRadios);
 
+    if (panDragLat !== null && panDragLon !== null) {
+      context.fillStyle = 'red';
+      drawPoint(context, [panDragLon, panDragLat]);
+    }
+
     context.restore();
   },
 
   pointerDown(context, x, y) {
+    const [lon, lat] = unProjectPoint(context, x, y);
+    if (isNaN(lon) || isNaN(lat)) {
+      return;
+    }
     panning = true;
+    panDragLon = lon;
+    panDragLat = lat;
+    console.log('dragging', lon, lat);
   },
 
   pointerMove(context, x, y, prevX, prevY) {
@@ -208,5 +291,7 @@ export const radioGlobeWidget = {
 
   pointerUp(context, x, y) {
     panning = false;
+    panDragLon = null;
+    panDragLat = null;
   },
 };
