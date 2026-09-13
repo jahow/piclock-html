@@ -53,7 +53,6 @@ async function writeGeoJSON() {
         if (region) {
           geometry = {
             type: 'Point',
-            // coordinates: getOffsetCoords(region.lng, region.lat, existingCount),
             coordinates: [region.lng, region.lat],
           };
         }

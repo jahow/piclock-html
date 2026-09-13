@@ -1,5 +1,5 @@
-import * as naturalEarthCoastlines from '../webradios/ne_50m_coastline.json';
-import * as naturalEarthBoundariesLand from '../webradios/ne_50m_admin_0_boundary_lines_land.json';
+import * as naturalEarthCoastlines from '../webradios/ne_110m_coastline.json';
+import * as naturalEarthBoundariesLand from '../webradios/ne_110m_admin_0_boundary_lines_land.json';
 import * as webRadios from '../webradios/webradios.json';
 import {
   DOT_MUTED,
@@ -25,9 +25,13 @@ let panDragLon = null;
 let panDragLat = null;
 let panning = false;
 
+let defaultLon = 0;
+let defaultLat = 0;
 getLatitudeLongitude().then(([lat, lon]) => {
   centerLat = lat;
   centerLon = lon;
+  defaultLon = lon;
+  defaultLat = lat;
 });
 
 function toRad(degrees) {
@@ -45,6 +49,11 @@ export function zoomIn() {
 }
 export function zoomOut() {
   targetZoomLevel = Math.max(1, targetZoomLevel - 1);
+}
+export function resetView() {
+  targetZoomLevel = 3;
+  centerLon = defaultLon;
+  centerLat = defaultLat;
 }
 
 function getRadius() {
@@ -160,25 +169,59 @@ function drawMultiLine(context, coordinates) {
   }
 }
 
-function drawPoint(context, coordinates) {
+function drawPoint(context, coordinates, properties) {
   const [x, y] = projectPoint(context, ...coordinates);
+
+  // this point is part of a region cluster: skip
+  if (properties.regionCode) {
+    return;
+  }
+
+  context.fillStyle = getDotColor(DOT_OVERLAY);
+  context.globalAlpha = 1;
+
+  // region cluster
+  if (properties.radioCount) {
+    const radius = 8 + 3 * Math.floor(Math.log10(properties.radioCount));
+    const text = properties.radioCount.toString();
+    context.textAlign = 'center';
+    context.beginPath();
+    context.arc(x, y, radius, 0, 2 * Math.PI);
+    context.fill();
+    context.save();
+    context.fillStyle = getDotColor(DOT_OFF);
+    context.strokeStyle = getDotColor(DOT_OFF);
+    context.lineWidth = 1;
+    context.strokeText(text, x, y + 5);
+    context.fillText(text, x, y + 5);
+    context.restore();
+    return;
+  }
+
   context.beginPath();
   context.arc(x, y, 3, 0, 2 * Math.PI);
   context.fill();
-}
 
-function drawCluster(context, coordinates, radiosCount) {
-  const [x, y] = projectPoint(context, ...coordinates);
-  const radius = 8 + 3 * Math.floor(Math.log10(radiosCount));
-  context.beginPath();
-  context.arc(x, y, radius, 0, 2 * Math.PI);
-  context.fill();
-  context.save();
-  context.fillStyle = getDotColor(DOT_OFF);
-  context.strokeStyle = getDotColor(DOT_OFF) + ' / 50%';
-  context.strokeText(radiosCount.toString(), x, y + 5);
-  context.fillText(radiosCount.toString(), x, y + 5);
-  context.restore();
+  const dist = Math.max(
+    Math.abs(x - context.canvas.width / 2),
+    Math.abs(y - context.canvas.height / 2),
+  );
+  const maxDist = getRadius() / 16;
+  if (dist < maxDist && properties.name) {
+    context.globalAlpha = 1 - dist / maxDist;
+    let text = properties.name;
+    if (properties.name.length > 15) {
+      text = properties.name.substring(0, 15) + '...';
+    }
+    context.textAlign = 'left';
+    context.fillStyle = getDotColor(DOT_ON);
+    // context.fillStyle = `rgba(255, 255, 255, ${Math.floor(100 - dist) / 100})`;
+    context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    context.lineWidth = 2;
+    context.strokeText(text, x + 5, y + 5);
+    context.fillText(text, x + 5, y + 5);
+    context.globalAlpha = 1;
+  }
 }
 
 function drawFeatureCollection(context, collection) {
@@ -188,17 +231,8 @@ function drawFeatureCollection(context, collection) {
       drawLine(context, feature.geometry.coordinates);
     } else if (feature.geometry.type === 'MultiLineString') {
       drawMultiLine(context, feature.geometry.coordinates);
-    } else if (
-      feature.geometry.type === 'Point' &&
-      feature.properties.radioCount
-    ) {
-      drawCluster(
-        context,
-        feature.geometry.coordinates,
-        feature.properties.radioCount,
-      );
     } else if (feature.geometry.type === 'Point') {
-      drawPoint(context, feature.geometry.coordinates);
+      drawPoint(context, feature.geometry.coordinates, feature.properties);
     } else {
       console.log('could not draw that');
     }
@@ -219,6 +253,14 @@ export const radioGlobeWidget = {
     context.beginPath();
     context.rect(0, 0, context.canvas.width, context.canvas.height);
     context.moveTo(200, 200);
+    context.arc(
+      matrix.getPixelFromDot(5.5),
+      matrix.getPixelFromDot(39.5),
+      matrix.getPixelFromDot(3.3),
+      0,
+      Math.PI * 2,
+      true,
+    );
     context.arc(
       matrix.getPixelFromDot(5.5),
       matrix.getPixelFromDot(30.5),
@@ -249,6 +291,7 @@ export const radioGlobeWidget = {
     context.textAlign = 'center';
     context.strokeStyle = getDotColor(DOT_ON);
     context.lineWidth = 1;
+    context.lineCap = 'round';
     drawFeatureCollection(context, naturalEarthCoastlines);
     context.strokeStyle = getDotColor(DOT_MUTED);
     context.lineWidth = 1;
@@ -257,9 +300,27 @@ export const radioGlobeWidget = {
     drawFeatureCollection(context, webRadios);
 
     if (panDragLat !== null && panDragLon !== null) {
-      context.fillStyle = 'red';
-      drawPoint(context, [panDragLon, panDragLat]);
+      drawPoint(context, [panDragLon, panDragLat], {});
     }
+
+    function drawReticule() {
+      context.beginPath();
+      context.moveTo(context.canvas.width / 2 - 15, context.canvas.height / 2);
+      context.lineTo(context.canvas.width / 2 - 25, context.canvas.height / 2);
+      context.moveTo(context.canvas.width / 2 + 15, context.canvas.height / 2);
+      context.lineTo(context.canvas.width / 2 + 25, context.canvas.height / 2);
+      context.moveTo(context.canvas.width / 2, context.canvas.height / 2 - 15);
+      context.lineTo(context.canvas.width / 2, context.canvas.height / 2 - 25);
+      context.moveTo(context.canvas.width / 2, context.canvas.height / 2 + 15);
+      context.lineTo(context.canvas.width / 2, context.canvas.height / 2 + 25);
+      context.stroke();
+    }
+    context.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+    context.lineWidth = 6;
+    drawReticule();
+    context.strokeStyle = getDotColor(DOT_ON);
+    context.lineWidth = 2;
+    drawReticule();
 
     context.restore();
   },
@@ -279,8 +340,13 @@ export const radioGlobeWidget = {
     if (!panning) {
       return;
     }
-    centerLon += (prevX - x) / 16;
-    centerLat += (y - prevY) / 16;
+    const [lon, lat] = unProjectPoint(context, x, y);
+    const [prevLon, prevLat] = unProjectPoint(context, prevX, prevY);
+    if (isNaN(lon) || isNaN(lat) || isNaN(prevLon) || isNaN(prevLat)) {
+      return;
+    }
+    centerLon += prevLon - lon;
+    centerLat += prevLat - lat;
     if (centerLon < -180) {
       centerLon += 360;
     } else if (centerLon > 180) {

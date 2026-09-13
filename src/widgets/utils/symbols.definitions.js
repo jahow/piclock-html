@@ -849,6 +849,15 @@ export const iconSymbols = {
       '       ',
       '       ',
     ]),
+    my_loc: processSymbol([
+      '       ',
+      '       ',
+      '   x   ',
+      '  . .  ',
+      '   .   ',
+      '       ',
+      '       ',
+    ]),
   },
 };
 /** @type {SymbolSet} */

@@ -5,7 +5,12 @@ import { createButtonWidget } from './widgets/button.js';
 import './display.js';
 import { iconSymbols } from './widgets/utils/symbols.definitions.js';
 import { getMatrix } from './matrix.js';
-import { radioGlobeWidget, zoomIn, zoomOut } from './widgets/radio-globe.js';
+import {
+  radioGlobeWidget,
+  resetView,
+  zoomIn,
+  zoomOut,
+} from './widgets/radio-globe.js';
 
 addWidget(clockWidget);
 addWidget(daysWidget);
@@ -33,6 +38,16 @@ addWidget(
 );
 addWidget(
   createButtonWidget(2, 27, iconSymbols.symbols.minus, () => zoomOut(), true),
+  'radio',
+);
+addWidget(
+  createButtonWidget(
+    2,
+    36,
+    iconSymbols.symbols.my_loc,
+    () => resetView(),
+    true,
+  ),
   'radio',
 );
 
