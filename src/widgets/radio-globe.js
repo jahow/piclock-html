@@ -1,5 +1,5 @@
-import * as naturalEarthCoastlines from '../webradios/ne_110m_coastline.json';
-import * as naturalEarthBoundariesLand from '../webradios/ne_110m_admin_0_boundary_lines_land.json';
+import * as naturalEarthCoastlines from '../webradios/ne_50m_coastline.json';
+import * as naturalEarthBoundariesLand from '../webradios/ne_50m_admin_0_boundary_lines_land.json';
 import * as webRadios from '../webradios/webradios.json';
 import {
   DOT_MUTED,
@@ -33,6 +33,8 @@ getLatitudeLongitude().then(([lat, lon]) => {
   defaultLon = lon;
   defaultLat = lat;
 });
+
+const tempCoord = [0, 0];
 
 function toRad(degrees) {
   return (degrees * Math.PI) / 180;
@@ -85,7 +87,7 @@ function projectPoint(context, lon, lat) {
   //   sinAlpha * cosBeta * X +
   //   (sinAlpha * sinBeta * sinTheta + cosAlpha * cosTheta) * Y +
   //   (sinAlpha * sinBeta * cosTheta - cosAlpha * sinTheta) * Z;
-  // R_rotated = -sinBeta * X + cosBeta * sinTheta * Y + cosBeta * cosTheta * Z;
+  // Z_rotated = -sinBeta * X + cosBeta * sinTheta * Y + cosBeta * cosTheta * Z;
 
   // rotate around X
   const pXa = cosAlpha * pX + -sinAlpha * pY;
@@ -97,13 +99,14 @@ function projectPoint(context, lon, lat) {
   const pZb = sinTheta * pYa + cosTheta * pZa;
 
   if (pYb > 0) {
-    return [NaN, NaN];
+    tempCoord[0] = NaN;
+    tempCoord[1] = NaN;
+    return tempCoord;
   }
 
-  return [
-    pXb * radius + context.canvas.width / 2,
-    context.canvas.height / 2 - pZb * radius,
-  ];
+  tempCoord[0] = pXb * radius + context.canvas.width / 2;
+  tempCoord[1] = context.canvas.height / 2 - pZb * radius;
+  return tempCoord;
 }
 
 // this returns [lon, lat]
@@ -116,28 +119,33 @@ function unProjectPoint(context, x, y) {
       fromCenterYNormalized * fromCenterYNormalized >=
     1
   ) {
-    return [NaN, NaN];
+    tempCoord[0] = NaN;
+    tempCoord[1] = NaN;
+    return tempCoord;
   }
-  panning = true;
-  let phi = Math.acos(fromCenterXNormalized);
-  const theta = Math.acos(fromCenterYNormalized);
-  const result = [
-    centerLon - toDeg(phi - Math.PI / 2),
-    centerLat + toDeg(Math.PI / 2 - theta),
-  ];
-  if (result[1] > 90) {
-    result[1] = 180 - result[1];
-    result[0] += 180;
-  } else if (result[1] < -90) {
-    result[1] = -180 - result[1];
-    result[0] += 180;
-  }
-  if (result[0] > 180) {
-    result[0] -= 360;
-  } else if (result[0] < -180) {
-    result[0] += 360;
-  }
-  return result;
+  const pX = fromCenterXNormalized;
+  const pZ = fromCenterYNormalized;
+  const pY = -Math.sqrt(1 - pX * pX - pZ * pZ); // negative because we want to get the point in the front
+  const centerLonRad = toRad(centerLon);
+  const centerLatRad = toRad(centerLat);
+  const cosAlpha = Math.cos(centerLonRad);
+  const sinAlpha = Math.sin(centerLonRad);
+  const cosTheta = Math.cos(-centerLatRad);
+  const sinTheta = Math.sin(-centerLatRad);
+  // rotate around -Z
+  const pXa = pX;
+  const pYa = cosTheta * pY - sinTheta * pZ;
+  const pZa = sinTheta * pY + cosTheta * pZ;
+  // rotate around -X
+  const pXb = cosAlpha * pXa + -sinAlpha * pYa;
+  const pYb = sinAlpha * pXa + cosAlpha * pYa;
+  const pZb = pZa;
+
+  const projectedLat = Math.asin(pZb);
+  const projectedLon = Math.atan2(pYb, pXb) + Math.PI / 2;
+  tempCoord[0] = toDeg(projectedLon);
+  tempCoord[1] = toDeg(projectedLat);
+  return tempCoord;
 }
 
 function drawLine(context, coordinates) {
@@ -299,9 +307,8 @@ export const radioGlobeWidget = {
     context.fillStyle = getDotColor(DOT_OVERLAY);
     drawFeatureCollection(context, webRadios);
 
-    if (panDragLat !== null && panDragLon !== null) {
-      drawPoint(context, [panDragLon, panDragLat], {});
-    }
+    // debug: current point
+    // drawPoint(context, [panDragLon, panDragLat], {});
 
     function drawReticule() {
       context.beginPath();
@@ -316,7 +323,7 @@ export const radioGlobeWidget = {
       context.stroke();
     }
     context.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-    context.lineWidth = 6;
+    context.lineWidth = 8;
     drawReticule();
     context.strokeStyle = getDotColor(DOT_ON);
     context.lineWidth = 2;
@@ -333,7 +340,6 @@ export const radioGlobeWidget = {
     panning = true;
     panDragLon = lon;
     panDragLat = lat;
-    console.log('dragging', lon, lat);
   },
 
   pointerMove(context, x, y, prevX, prevY) {
