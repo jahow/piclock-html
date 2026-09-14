@@ -10,14 +10,10 @@ import {
   getMatrix,
 } from '../matrix.js';
 import { getLatitudeLongitude } from './utils/location.js';
+import { setCurrentRadio } from './radio-player.js';
 
-const stream = 'http://195.150.20.242:8000/rmf_fm';
-
-const audioEl = /** @type {HTMLAudioElement} */ (
-  document.createElement('audio')
-);
-audioEl.src = stream;
-// audioEl.play();
+let closestRadioDistance = 0;
+let closestRadio = null;
 
 let centerLon = 0;
 let centerLat = 0;
@@ -224,11 +220,18 @@ function drawPoint(context, coordinates, properties) {
     context.textAlign = 'left';
     context.fillStyle = getDotColor(DOT_ON);
     // context.fillStyle = `rgba(255, 255, 255, ${Math.floor(100 - dist) / 100})`;
-    context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-    context.lineWidth = 2;
+    context.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    context.lineWidth = 3;
     context.strokeText(text, x + 5, y + 5);
     context.fillText(text, x + 5, y + 5);
     context.globalAlpha = 1;
+  }
+
+  if (dist < 8 && dist < closestRadioDistance) {
+    closestRadioDistance = dist;
+    closestRadio = properties;
+    // audioEl.src = currentRadioStream;
+    // audioEl.play();
   }
 }
 
@@ -260,6 +263,12 @@ export const radioGlobeWidget = {
     const matrix = getMatrix();
     context.beginPath();
     context.rect(0, 0, context.canvas.width, context.canvas.height);
+    context.rect(
+      matrix.getPixelFromDot(23.5),
+      matrix.getPixelFromDot(matrix.height - 1.5),
+      matrix.getPixelFromDot(matrix.width - 25),
+      -matrix.getPixelFromDot(8),
+    );
     context.moveTo(200, 200);
     context.arc(
       matrix.getPixelFromDot(5.5),
@@ -295,6 +304,8 @@ export const radioGlobeWidget = {
     );
     context.clip();
 
+    closestRadioDistance = Infinity;
+
     context.font = 'bold 14px sans-serif';
     context.textAlign = 'center';
     context.strokeStyle = getDotColor(DOT_ON);
@@ -306,6 +317,10 @@ export const radioGlobeWidget = {
     drawFeatureCollection(context, naturalEarthBoundariesLand);
     context.fillStyle = getDotColor(DOT_OVERLAY);
     drawFeatureCollection(context, webRadios);
+
+    if (closestRadio) {
+      setCurrentRadio(closestRadio);
+    }
 
     // debug: current point
     // drawPoint(context, [panDragLon, panDragLat], {});

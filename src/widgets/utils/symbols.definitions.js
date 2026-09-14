@@ -858,6 +858,24 @@ export const iconSymbols = {
       '       ',
       '       ',
     ]),
+    play: processSymbol([
+      '       ',
+      ' xx    ',
+      ' xxx   ',
+      ' x...  ',
+      ' ...   ',
+      ' ..    ',
+      '       ',
+    ]),
+    pause: processSymbol([
+      '       ',
+      ' xx xx ',
+      ' xx xx ',
+      ' x. .x ',
+      ' .. .. ',
+      ' .. .. ',
+      '       ',
+    ]),
   },
 };
 /** @type {SymbolSet} */

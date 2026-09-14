@@ -249,6 +249,26 @@ class DotMatrix {
   }
 
   /**
+   * @param context
+   * @param x
+   * @param y
+   * @param dotX
+   * @param dotY
+   * @param dotWidth
+   * @param dotHeight
+   * @return {boolean}
+   */
+  hitTestDot(context, x, y, dotX, dotY, dotWidth, dotHeight) {
+    const dotPos = getMatrix().getDotPositionFromPixel(context, x, y);
+    return (
+      dotPos[1] >= dotY &&
+      dotPos[1] <= dotY + dotHeight &&
+      dotPos[0] >= dotX &&
+      dotPos[0] <= dotX + dotWidth
+    );
+  }
+
+  /**
    * @param {CanvasRenderingContext2D} context
    */
   render(context) {

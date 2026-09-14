@@ -18,16 +18,6 @@ export function createButtonWidget(
   let active = false;
   const buttonSize = small ? 7 : 9;
 
-  function hitTest(context, x, y) {
-    const dotPos = getMatrix().getDotPositionFromPixel(context, x, y);
-    return (
-      dotPos[1] >= posY &&
-      dotPos[1] <= posY + buttonSize &&
-      dotPos[0] >= posX &&
-      dotPos[0] <= posX + buttonSize
-    );
-  }
-
   return {
     render(context) {
       const matrix = getMatrix();
@@ -50,7 +40,17 @@ export function createButtonWidget(
     },
 
     pointerDown(context, x, y) {
-      if (hitTest(context, x, y)) {
+      if (
+        getMatrix().hitTestDot(
+          context,
+          x,
+          y,
+          posX,
+          posY,
+          buttonSize,
+          buttonSize,
+        )
+      ) {
         active = true;
       } else {
         active = false;
@@ -58,7 +58,18 @@ export function createButtonWidget(
     },
 
     pointerUp(context, x, y) {
-      if (hitTest(context, x, y) && active) {
+      if (
+        getMatrix().hitTestDot(
+          context,
+          x,
+          y,
+          posX,
+          posY,
+          buttonSize,
+          buttonSize,
+        ) &&
+        active
+      ) {
         onActivate();
       }
       active = false;

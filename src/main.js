@@ -11,6 +11,7 @@ import {
   zoomIn,
   zoomOut,
 } from './widgets/radio-globe.js';
+import { radioPlayerWidget } from './widgets/radio-player.js';
 
 addWidget(clockWidget);
 addWidget(daysWidget);
@@ -28,6 +29,7 @@ addWidget(
 
 // RADIO
 addWidget(radioGlobeWidget, 'radio');
+addWidget(radioPlayerWidget, 'radio');
 addWidget(
   createButtonWidget(2, 4, iconSymbols.symbols.ok, () => setPage('default')),
   'radio',
