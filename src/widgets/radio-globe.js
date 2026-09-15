@@ -255,17 +255,21 @@ function drawClusterPoint(context, coordinates, properties, clusterProperties) {
   context.globalAlpha = 1;
 
   let [x, y] = projectPoint(context, ...coordinates);
-  const distance =
-    (properties.indexInRegion * CLUSTER_BASE_RADIUS * Math.PI * 2) / 8;
-  let circleIndex = Math.floor(
-    Math.log1p(2 + distance / (Math.PI * CLUSTER_BASE_RADIUS)),
-  );
-  const radius = circleIndex * CLUSTER_BASE_RADIUS * openedClusterAnimRatio;
+  // each ring contains 6 * rR points where R is the ring number (1, 2...)
+  // Total capacity at a certain ring is 6 + 6 * 2 + ... + 6 * R
+  // which is 6 * (1 + 2 + ... + R) = 6 * R * (R + 1) / 2
+  // so R = SQRT( 1 + 4 * Ncapacity / 3) / 2 - 1 / 2
+  const ringIndex =
+    Math.floor((Math.sqrt(1 + (4 * properties.indexInRegion) / 3) - 1) / 2) + 1;
+  const radius = ringIndex * CLUSTER_BASE_RADIUS * openedClusterAnimRatio;
+  const pointsBeforeRing = 3 * (ringIndex - 1) * ringIndex;
+  const pointsInRing = 6 * ringIndex;
+  const pointIndexInRing = properties.indexInRegion - pointsBeforeRing;
   const angle =
-    (distance - (circleIndex - 1) * CLUSTER_BASE_RADIUS * Math.PI * 2) / radius;
+    (pointIndexInRing / pointsInRing) * 2 * Math.PI * openedClusterAnimRatio;
 
-  x += Math.cos(angle) * radius;
-  y += Math.sin(angle) * radius;
+  x += Math.sin(angle) * radius;
+  y += Math.cos(angle) * radius;
 
   context.beginPath();
   context.arc(x, y, 3, 0, 2 * Math.PI);
@@ -414,9 +418,11 @@ export const radioGlobeWidget = {
       const distSq =
         Math.pow(x - context.canvas.width / 2, 2) +
         Math.pow(y - context.canvas.height / 2, 2);
-      const maxDist =
-        (Math.floor(Math.log2(2 + openedCluster.radioCount / Math.PI)) + 0.5) *
-        CLUSTER_BASE_RADIUS;
+      const ringCount =
+        Math.floor(
+          (Math.sqrt(1 + (4 * openedCluster.radioCount) / 3) - 1) / 2,
+        ) + 1;
+      const maxDist = (ringCount + 0.5) * CLUSTER_BASE_RADIUS;
       if (distSq > maxDist * maxDist) {
         openedCluster = null;
       }
