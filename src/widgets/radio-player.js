@@ -15,8 +15,8 @@ let currentRadio = null;
 let isPlaying = false;
 function setPlaying(playing) {
   isPlaying = playing;
-  if (playing && currentRadio && currentRadio.url) {
-    audioEl.src = currentRadio.url;
+  if (playing && currentRadio && currentRadio.url_resolved) {
+    audioEl.src = currentRadio.url_resolved;
     audioEl.play();
   }
   if (!playing) {
@@ -25,9 +25,9 @@ function setPlaying(playing) {
 }
 
 export function setCurrentRadio(radio) {
-  const urlChanged = currentRadio?.url !== radio?.url;
+  const urlChanged = currentRadio?.url_resolved !== radio?.url_resolved;
   currentRadio = radio;
-  if (!radio || !radio.url) {
+  if (!radio || !radio.url_resolved) {
     setPlaying(false);
   } else if (urlChanged && isPlaying) {
     setPlaying(true);

@@ -22,7 +22,7 @@ async function writeGeoJSON() {
     .map((radio) => {
       const properties = {
         url: radio.url,
-        url_resolved: radio.url_resolved,
+        url_resolved: radio.url_resolved ?? radio.url,
         name: radio.name,
         tags: radio.tags,
       };
@@ -85,6 +85,8 @@ async function writeGeoJSON() {
       },
       id: `region-${key}`,
       properties: {
+        regionCode: key,
+        isCluster: true,
         radioCount: value,
       },
     });

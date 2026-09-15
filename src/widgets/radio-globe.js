@@ -14,6 +14,15 @@ import { setCurrentRadio } from './radio-player.js';
 
 let closestRadioDistance = 0;
 let closestRadio = null;
+let closestRadioLon = 0;
+let closestRadioLat = 0;
+
+let openedCluster = null;
+let openedClusterAnimRatio = 0;
+let openedClusterLon = 0;
+let openedClusterLat = 0;
+
+const CLUSTER_BASE_RADIUS = 40;
 
 let centerLon = 0;
 let centerLat = 0;
@@ -177,7 +186,7 @@ function drawPoint(context, coordinates, properties) {
   const [x, y] = projectPoint(context, ...coordinates);
 
   // this point is part of a region cluster: skip
-  if (properties.regionCode) {
+  if (properties.regionCode && !properties.isCluster) {
     return;
   }
 
@@ -185,7 +194,7 @@ function drawPoint(context, coordinates, properties) {
   context.globalAlpha = 1;
 
   // region cluster
-  if (properties.radioCount) {
+  if (properties.isCluster) {
     const radius = 8 + 3 * Math.floor(Math.log10(properties.radioCount));
     const text = properties.radioCount.toString();
     context.textAlign = 'center';
@@ -199,8 +208,64 @@ function drawPoint(context, coordinates, properties) {
     context.strokeText(text, x, y + 5);
     context.fillText(text, x, y + 5);
     context.restore();
+  } else {
+    context.beginPath();
+    context.arc(x, y, 3, 0, 2 * Math.PI);
+    context.fill();
+  }
+
+  const dist = Math.max(
+    Math.abs(x - context.canvas.width / 2),
+    Math.abs(y - context.canvas.height / 2),
+  );
+  const maxDist = getRadius() / 16;
+  if (dist < maxDist && properties.name) {
+    context.globalAlpha = 1 - dist / maxDist;
+    let text = properties.name;
+    if (properties.name.length > 15) {
+      text = properties.name.substring(0, 15) + '...';
+    }
+    context.textAlign = 'left';
+    context.fillStyle = getDotColor(DOT_ON);
+    context.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    context.lineWidth = 3;
+    context.strokeText(text, x + 5, y + 5);
+    context.fillText(text, x + 5, y + 5);
+    context.globalAlpha = 1;
+  }
+
+  if (dist < 8 && dist < closestRadioDistance) {
+    closestRadioDistance = dist;
+    closestRadio = properties;
+    closestRadioLon = coordinates[0];
+    closestRadioLat = coordinates[1];
+  }
+}
+
+function drawClusterPoint(context, coordinates, properties, clusterProperties) {
+  // this point is part of another cluster or is another cluster: skip
+  if (
+    properties.isCluster ||
+    properties.regionCode !== clusterProperties.regionCode
+  ) {
     return;
   }
+
+  context.fillStyle = getDotColor(DOT_OVERLAY);
+  context.globalAlpha = 1;
+
+  let [x, y] = projectPoint(context, ...coordinates);
+  const distance =
+    (properties.indexInRegion * CLUSTER_BASE_RADIUS * Math.PI * 2) / 8;
+  let circleIndex = Math.floor(
+    Math.log1p(2 + distance / (Math.PI * CLUSTER_BASE_RADIUS)),
+  );
+  const radius = circleIndex * CLUSTER_BASE_RADIUS * openedClusterAnimRatio;
+  const angle =
+    (distance - (circleIndex - 1) * CLUSTER_BASE_RADIUS * Math.PI * 2) / radius;
+
+  x += Math.cos(angle) * radius;
+  y += Math.sin(angle) * radius;
 
   context.beginPath();
   context.arc(x, y, 3, 0, 2 * Math.PI);
@@ -229,6 +294,8 @@ function drawPoint(context, coordinates, properties) {
   if (dist < 8 && dist < closestRadioDistance) {
     closestRadioDistance = dist;
     closestRadio = properties;
+    closestRadioLon = coordinates[0];
+    closestRadioLat = coordinates[1];
   }
 }
 
@@ -240,7 +307,16 @@ function drawFeatureCollection(context, collection) {
     } else if (feature.geometry.type === 'MultiLineString') {
       drawMultiLine(context, feature.geometry.coordinates);
     } else if (feature.geometry.type === 'Point') {
-      drawPoint(context, feature.geometry.coordinates, feature.properties);
+      if (openedCluster) {
+        drawClusterPoint(
+          context,
+          feature.geometry.coordinates,
+          feature.properties,
+          openedCluster,
+        );
+      } else {
+        drawPoint(context, feature.geometry.coordinates, feature.properties);
+      }
     } else {
       console.log('could not draw that');
     }
@@ -302,6 +378,8 @@ export const radioGlobeWidget = {
     context.clip();
 
     closestRadioDistance = Infinity;
+    closestRadio = null;
+    openedClusterAnimRatio += (1 - openedClusterAnimRatio) * 0.2;
 
     context.font = 'bold 14px sans-serif';
     context.textAlign = 'center';
@@ -316,11 +394,33 @@ export const radioGlobeWidget = {
     drawFeatureCollection(context, webRadios);
 
     if (closestRadio) {
-      setCurrentRadio(closestRadio);
+      if (
+        closestRadio.isCluster &&
+        closestRadio.regionCode !== openedCluster?.regionCode
+      ) {
+        openedCluster = closestRadio;
+        openedClusterAnimRatio = 0;
+        openedClusterLon = closestRadioLon;
+        openedClusterLat = closestRadioLat;
+      } else {
+        // openedCluster = null;
+        setCurrentRadio(closestRadio);
+      }
     }
 
-    // debug: current point
-    // drawPoint(context, [panDragLon, panDragLat], {});
+    // checkin whether an opened cluster should be closed
+    if (openedCluster) {
+      const [x, y] = projectPoint(context, openedClusterLon, openedClusterLat);
+      const distSq =
+        Math.pow(x - context.canvas.width / 2, 2) +
+        Math.pow(y - context.canvas.height / 2, 2);
+      const maxDist =
+        (Math.floor(Math.log2(2 + openedCluster.radioCount / Math.PI)) + 0.5) *
+        CLUSTER_BASE_RADIUS;
+      if (distSq > maxDist * maxDist) {
+        openedCluster = null;
+      }
+    }
 
     function drawReticule() {
       context.beginPath();
