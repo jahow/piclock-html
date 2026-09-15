@@ -219,7 +219,6 @@ function drawPoint(context, coordinates, properties) {
     }
     context.textAlign = 'left';
     context.fillStyle = getDotColor(DOT_ON);
-    // context.fillStyle = `rgba(255, 255, 255, ${Math.floor(100 - dist) / 100})`;
     context.strokeStyle = 'rgba(0, 0, 0, 0.8)';
     context.lineWidth = 3;
     context.strokeText(text, x + 5, y + 5);
@@ -230,8 +229,6 @@ function drawPoint(context, coordinates, properties) {
   if (dist < 8 && dist < closestRadioDistance) {
     closestRadioDistance = dist;
     closestRadio = properties;
-    // audioEl.src = currentRadioStream;
-    // audioEl.play();
   }
 }
 

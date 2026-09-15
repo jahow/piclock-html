@@ -35,8 +35,8 @@ scope=https%3A//www.googleapis.com/auth/calendar.readonly&
 include_granted_scopes=true&
 response_type=token&
 state=state_parameter_passthrough_value&
-redirect_uri=${window.location.toString()}&
-client_id=521298106728-pe2ffr13271rqdkru2gu7u78cf5valda.apps.googleusercontent.com`);
+client_id=521298106728-pe2ffr13271rqdkru2gu7u78cf5valda.apps.googleusercontent.com&
+redirect_uri=${window.location.toString()}`);
 }
 
 let events = [];
