@@ -12,7 +12,7 @@ const audioEl = /** @type {HTMLAudioElement} */ (
 );
 let currentRadio = null;
 
-let isPlaying = false;
+let isPlaying = true;
 function setPlaying(playing) {
   isPlaying = playing;
   if (playing && currentRadio && currentRadio.url_resolved) {
@@ -22,6 +22,9 @@ function setPlaying(playing) {
   if (!playing) {
     audioEl.pause();
   }
+}
+export function getIsPlaying() {
+  return isPlaying;
 }
 
 export function setCurrentRadio(radio) {
@@ -44,7 +47,7 @@ export const radioPlayerWidget = {
     const symbol = isPlaying
       ? iconSymbols.symbols.pause
       : iconSymbols.symbols.play;
-    matrix.applySymbol(symbol, matrix.width - 8, matrix.height - 9);
+    matrix.applySymbol(symbol, matrix.width - 9, matrix.height - 9);
 
     matrix.fillDots(24, matrix.height - 10, matrix.width - 26, 1, DOT_NIGHT);
     matrix.fillDots(24, matrix.height - 2, matrix.width - 26, 1, DOT_NIGHT);
@@ -61,7 +64,7 @@ export const radioPlayerWidget = {
     const name = currentRadio.name || '...';
     context.fillText(
       name,
-      matrix.getPixelFromDot(matrix.width - 8.5),
+      matrix.getPixelFromDot(matrix.width - 9),
       matrix.getPixelFromDot(matrix.height - 6),
     );
     if (currentRadio.tags) {
@@ -69,7 +72,7 @@ export const radioPlayerWidget = {
       context.font = 'bold 14px monospace';
       context.fillText(
         currentRadio.tags.toUpperCase(),
-        matrix.getPixelFromDot(matrix.width - 8.5),
+        matrix.getPixelFromDot(matrix.width - 9),
         matrix.getPixelFromDot(matrix.height - 3.5),
       );
     }

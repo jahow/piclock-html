@@ -14,6 +14,7 @@ export function createButtonWidget(
   icon,
   onActivate,
   small = false,
+  clearBackground = true,
 ) {
   let active = false;
   const buttonSize = small ? 7 : 9;
@@ -29,7 +30,7 @@ export function createButtonWidget(
           ? iconSymbols.symbols.buttonActive
           : iconSymbols.symbols.button;
       }
-      matrix.applySymbol(buttonIcon, posX, posY, true);
+      matrix.applySymbol(buttonIcon, posX, posY, clearBackground);
       matrix.applySymbol(
         icon,
         posX + (small ? 0 : 1),

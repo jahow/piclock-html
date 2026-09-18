@@ -218,7 +218,7 @@ function drawPoint(context, coordinates, properties) {
     Math.abs(x - context.canvas.width / 2),
     Math.abs(y - context.canvas.height / 2),
   );
-  const maxDist = getRadius() / 16;
+  const maxDist = 100;
   if (dist < maxDist && properties.name) {
     context.globalAlpha = 1 - dist / maxDist;
     let text = properties.name;
@@ -279,7 +279,7 @@ function drawClusterPoint(context, coordinates, properties, clusterProperties) {
     Math.abs(x - context.canvas.width / 2),
     Math.abs(y - context.canvas.height / 2),
   );
-  const maxDist = getRadius() / 16;
+  const maxDist = 100;
   if (dist < maxDist && properties.name) {
     context.globalAlpha = 1 - dist / maxDist;
     let text = properties.name;

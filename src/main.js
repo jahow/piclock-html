@@ -11,12 +11,21 @@ import {
   zoomIn,
   zoomOut,
 } from './widgets/radio-globe.js';
-import { radioPlayerWidget } from './widgets/radio-player.js';
+import { getIsPlaying, radioPlayerWidget } from './widgets/radio-player.js';
+import { createRippleAnimationWidget } from './widgets/animation.js';
 
 addWidget(clockWidget);
 addWidget(daysWidget);
+addWidget(createRippleAnimationWidget(0, 2, getIsPlaying));
 addWidget(
-  createButtonWidget(2, 4, iconSymbols.symbols.radio, () => setPage('radio')),
+  createButtonWidget(
+    2,
+    4,
+    iconSymbols.symbols.radio,
+    () => setPage('radio'),
+    false,
+    false,
+  ),
 );
 addWidget(
   createButtonWidget(
@@ -54,4 +63,4 @@ addWidget(
 );
 
 // temp
-setPage('radio');
+// setPage('radio');

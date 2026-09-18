@@ -75,7 +75,7 @@ async function writeGeoJSON() {
   // add a cluster for each region
   for (const key in countByRegion) {
     const value = countByRegion[key];
-    if (value <= 1) continue;
+    // if (value <= 1) continue;
     const region = REGIONS[key];
     features.push({
       type: 'Feature',
