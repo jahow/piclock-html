@@ -12,7 +12,8 @@ const audioEl = /** @type {HTMLAudioElement} */ (
 );
 let currentRadio = null;
 
-let isPlaying = true;
+let isPlaying = false;
+
 function setPlaying(playing) {
   isPlaying = playing;
   if (playing && currentRadio && currentRadio.url_resolved) {

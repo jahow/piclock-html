@@ -331,7 +331,7 @@ class DotMatrix {
       }
     }
 
-    console.log(`drawn ${rendered} new dots`);
+    // console.log(`drawn ${rendered} new dots`);
 
     // after render
     this.firstRender = false;
