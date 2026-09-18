@@ -2,6 +2,10 @@ import { getRatioOfTimeInDay } from './misc.js';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
+const GOOGLE_CLIENT_ID =
+  '521298106728-pe2ffr13271rqdkru2gu7u78cf5valda.apps.googleusercontent.com';
+const GOOGLE_CALENDAR_ID = 'MY_CALENDAR_ID';
+
 /**
  * @return {string} access token
  */
@@ -35,7 +39,7 @@ scope=https%3A//www.googleapis.com/auth/calendar.readonly&
 include_granted_scopes=true&
 response_type=token&
 state=state_parameter_passthrough_value&
-client_id=521298106728-pe2ffr13271rqdkru2gu7u78cf5valda.apps.googleusercontent.com&
+client_id=${GOOGLE_CLIENT_ID}&
 redirect_uri=${window.location.toString()}`);
 }
 
@@ -55,8 +59,7 @@ export async function refreshEvents() {
   const inAWeekEnd = todayStart + 7 * DAY_IN_MS;
 
   const data = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/MY_CALENDAR_ID/events?
-timeMin=${new Date(todayStart).toISOString()}&timeMax=${new Date(inAWeekEnd).toISOString()}&singleEvents=true&orderBy=startTime`,
+    `https://www.googleapis.com/calendar/v3/calendars/${GOOGLE_CALENDAR_ID}/events?timeMin=${new Date(todayStart).toISOString()}&timeMax=${new Date(inAWeekEnd).toISOString()}&singleEvents=true&orderBy=startTime`,
     {
       // mode: 'cors',
       headers: {

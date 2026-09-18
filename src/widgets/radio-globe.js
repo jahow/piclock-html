@@ -67,7 +67,7 @@ function getRadius() {
   return 300 * Math.pow(2, zoomLevel - 1);
 }
 
-function projectPoint(context, lon, lat) {
+function projectPoint(canvasWidth, canvasHeight, lon, lat) {
   const radius = getRadius();
   const centerLonRad = toRad(centerLon);
   const centerLatRad = toRad(centerLat);
@@ -109,16 +109,16 @@ function projectPoint(context, lon, lat) {
     return tempCoord;
   }
 
-  tempCoord[0] = pXb * radius + context.canvas.width / 2;
-  tempCoord[1] = context.canvas.height / 2 - pZb * radius;
+  tempCoord[0] = pXb * radius + canvasWidth / 2;
+  tempCoord[1] = canvasHeight / 2 - pZb * radius;
   return tempCoord;
 }
 
 // this returns [lon, lat]
-function unProjectPoint(context, x, y) {
+function unProjectPoint(canvasWidth, canvasHeight, x, y) {
   const radius = getRadius();
-  const fromCenterXNormalized = (x - context.canvas.width / 2) / radius;
-  const fromCenterYNormalized = (context.canvas.height / 2 - y) / radius;
+  const fromCenterXNormalized = (x - canvasWidth / 2) / radius;
+  const fromCenterYNormalized = (canvasHeight / 2 - y) / radius;
   if (
     fromCenterXNormalized * fromCenterXNormalized +
       fromCenterYNormalized * fromCenterYNormalized >=
@@ -153,12 +153,12 @@ function unProjectPoint(context, x, y) {
   return tempCoord;
 }
 
-function drawLine(context, coordinates) {
+function drawLine(context, canvasWidth, canvasHeight, coordinates) {
   context.beginPath();
   let first = true;
   for (let j = 0; j < coordinates.length; j++) {
     const [lon, lat] = coordinates[j];
-    const [x, y] = projectPoint(context, lon, lat);
+    const [x, y] = projectPoint(canvasWidth, canvasHeight, lon, lat);
     if (isNaN(x) || isNaN(y)) {
       if (!first) {
         context.stroke();
@@ -176,14 +176,20 @@ function drawLine(context, coordinates) {
   context.stroke();
 }
 
-function drawMultiLine(context, coordinates) {
+function drawMultiLine(context, canvasWidth, canvasHeight, coordinates) {
   for (let i = 0; i < coordinates.length; i++) {
-    drawLine(context, coordinates[i]);
+    drawLine(context, canvasWidth, canvasHeight, coordinates[i]);
   }
 }
 
-function drawPoint(context, coordinates, properties) {
-  const [x, y] = projectPoint(context, ...coordinates);
+function drawPoint(
+  context,
+  canvasWidth,
+  canvasHeight,
+  coordinates,
+  properties,
+) {
+  const [x, y] = projectPoint(canvasWidth, canvasHeight, ...coordinates);
 
   // this point is part of a region cluster: skip
   if (properties.regionCode && !properties.isCluster) {
@@ -215,8 +221,8 @@ function drawPoint(context, coordinates, properties) {
   }
 
   const dist = Math.max(
-    Math.abs(x - context.canvas.width / 2),
-    Math.abs(y - context.canvas.height / 2),
+    Math.abs(x - canvasWidth / 2),
+    Math.abs(y - canvasHeight / 2),
   );
   const maxDist = 100;
   if (dist < maxDist && properties.name) {
@@ -242,7 +248,14 @@ function drawPoint(context, coordinates, properties) {
   }
 }
 
-function drawClusterPoint(context, coordinates, properties, clusterProperties) {
+function drawClusterPoint(
+  context,
+  canvasWidth,
+  canvasHeight,
+  coordinates,
+  properties,
+  clusterProperties,
+) {
   // this point is part of another cluster or is another cluster: skip
   if (
     properties.isCluster ||
@@ -254,7 +267,7 @@ function drawClusterPoint(context, coordinates, properties, clusterProperties) {
   context.fillStyle = getDotColor(DOT_OVERLAY);
   context.globalAlpha = 1;
 
-  let [x, y] = projectPoint(context, ...coordinates);
+  let [x, y] = projectPoint(canvasWidth, canvasHeight, ...coordinates);
   // each ring contains 6 * rR points where R is the ring number (1, 2...)
   // Total capacity at a certain ring is 6 + 6 * 2 + ... + 6 * R
   // which is 6 * (1 + 2 + ... + R) = 6 * R * (R + 1) / 2
@@ -276,8 +289,8 @@ function drawClusterPoint(context, coordinates, properties, clusterProperties) {
   context.fill();
 
   const dist = Math.max(
-    Math.abs(x - context.canvas.width / 2),
-    Math.abs(y - context.canvas.height / 2),
+    Math.abs(x - canvasWidth / 2),
+    Math.abs(y - canvasHeight / 2),
   );
   const maxDist = 100;
   if (dist < maxDist && properties.name) {
@@ -303,23 +316,41 @@ function drawClusterPoint(context, coordinates, properties, clusterProperties) {
   }
 }
 
-function drawFeatureCollection(context, collection) {
+function drawFeatureCollection(context, canvasWidth, canvasHeight, collection) {
   for (let i = 0; i < collection.features.length; i++) {
     const feature = collection.features[i];
     if (feature.geometry.type === 'LineString') {
-      drawLine(context, feature.geometry.coordinates);
+      drawLine(
+        context,
+        canvasWidth,
+        canvasHeight,
+        feature.geometry.coordinates,
+      );
     } else if (feature.geometry.type === 'MultiLineString') {
-      drawMultiLine(context, feature.geometry.coordinates);
+      drawMultiLine(
+        context,
+        canvasWidth,
+        canvasHeight,
+        feature.geometry.coordinates,
+      );
     } else if (feature.geometry.type === 'Point') {
       if (openedCluster) {
         drawClusterPoint(
           context,
+          canvasWidth,
+          canvasHeight,
           feature.geometry.coordinates,
           feature.properties,
           openedCluster,
         );
       } else {
-        drawPoint(context, feature.geometry.coordinates, feature.properties);
+        drawPoint(
+          context,
+          canvasWidth,
+          canvasHeight,
+          feature.geometry.coordinates,
+          feature.properties,
+        );
       }
     } else {
       console.log('could not draw that');
@@ -335,11 +366,14 @@ export const radioGlobeWidget = {
     // update zoom level
     zoomLevel += (targetZoomLevel - zoomLevel) * 0.2;
 
+    const canvasWidth = context.canvas.width;
+    const canvasHeight = context.canvas.height;
+
     // create clipped regions for buttons
     context.save();
     const matrix = getMatrix();
     context.beginPath();
-    context.rect(0, 0, context.canvas.width, context.canvas.height);
+    context.rect(0, 0, canvasWidth, canvasHeight);
     context.rect(
       matrix.getPixelFromDot(23.5),
       matrix.getPixelFromDot(matrix.height - 1.5),
@@ -390,12 +424,22 @@ export const radioGlobeWidget = {
     context.strokeStyle = getDotColor(DOT_ON);
     context.lineWidth = 1;
     context.lineCap = 'round';
-    drawFeatureCollection(context, naturalEarthCoastlines);
+    drawFeatureCollection(
+      context,
+      canvasWidth,
+      canvasHeight,
+      naturalEarthCoastlines,
+    );
     context.strokeStyle = getDotColor(DOT_MUTED);
     context.lineWidth = 1;
-    drawFeatureCollection(context, naturalEarthBoundariesLand);
+    drawFeatureCollection(
+      context,
+      canvasWidth,
+      canvasHeight,
+      naturalEarthBoundariesLand,
+    );
     context.fillStyle = getDotColor(DOT_OVERLAY);
-    drawFeatureCollection(context, webRadios);
+    drawFeatureCollection(context, canvasWidth, canvasHeight, webRadios);
 
     if (closestRadio) {
       if (
@@ -414,10 +458,14 @@ export const radioGlobeWidget = {
 
     // checkin whether an opened cluster should be closed
     if (openedCluster) {
-      const [x, y] = projectPoint(context, openedClusterLon, openedClusterLat);
+      const [x, y] = projectPoint(
+        canvasWidth,
+        canvasHeight,
+        openedClusterLon,
+        openedClusterLat,
+      );
       const distSq =
-        Math.pow(x - context.canvas.width / 2, 2) +
-        Math.pow(y - context.canvas.height / 2, 2);
+        Math.pow(x - canvasWidth / 2, 2) + Math.pow(y - canvasHeight / 2, 2);
       const ringCount =
         Math.floor(
           (Math.sqrt(1 + (4 * openedCluster.radioCount) / 3) - 1) / 2,
@@ -430,14 +478,14 @@ export const radioGlobeWidget = {
 
     function drawReticule() {
       context.beginPath();
-      context.moveTo(context.canvas.width / 2 - 15, context.canvas.height / 2);
-      context.lineTo(context.canvas.width / 2 - 25, context.canvas.height / 2);
-      context.moveTo(context.canvas.width / 2 + 15, context.canvas.height / 2);
-      context.lineTo(context.canvas.width / 2 + 25, context.canvas.height / 2);
-      context.moveTo(context.canvas.width / 2, context.canvas.height / 2 - 15);
-      context.lineTo(context.canvas.width / 2, context.canvas.height / 2 - 25);
-      context.moveTo(context.canvas.width / 2, context.canvas.height / 2 + 15);
-      context.lineTo(context.canvas.width / 2, context.canvas.height / 2 + 25);
+      context.moveTo(canvasWidth / 2 - 15, canvasHeight / 2);
+      context.lineTo(canvasWidth / 2 - 25, canvasHeight / 2);
+      context.moveTo(canvasWidth / 2 + 15, canvasHeight / 2);
+      context.lineTo(canvasWidth / 2 + 25, canvasHeight / 2);
+      context.moveTo(canvasWidth / 2, canvasHeight / 2 - 15);
+      context.lineTo(canvasWidth / 2, canvasHeight / 2 - 25);
+      context.moveTo(canvasWidth / 2, canvasHeight / 2 + 15);
+      context.lineTo(canvasWidth / 2, canvasHeight / 2 + 25);
       context.stroke();
     }
     context.strokeStyle = 'rgba(0, 0, 0, 0.7)';
@@ -451,7 +499,9 @@ export const radioGlobeWidget = {
   },
 
   pointerDown(context, x, y) {
-    const [lon, lat] = unProjectPoint(context, x, y);
+    const canvasWidth = context.canvas.width;
+    const canvasHeight = context.canvas.height;
+    const [lon, lat] = unProjectPoint(canvasWidth, canvasHeight, x, y);
     if (isNaN(lon) || isNaN(lat)) {
       return;
     }
@@ -464,8 +514,15 @@ export const radioGlobeWidget = {
     if (!panning) {
       return;
     }
-    const [lon, lat] = unProjectPoint(context, x, y);
-    const [prevLon, prevLat] = unProjectPoint(context, prevX, prevY);
+    const canvasWidth = context.canvas.width;
+    const canvasHeight = context.canvas.height;
+    const [lon, lat] = unProjectPoint(canvasWidth, canvasHeight, x, y);
+    const [prevLon, prevLat] = unProjectPoint(
+      canvasWidth,
+      canvasHeight,
+      prevX,
+      prevY,
+    );
     if (isNaN(lon) || isNaN(lat) || isNaN(prevLon) || isNaN(prevLat)) {
       return;
     }
