@@ -4,7 +4,6 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const GOOGLE_CLIENT_ID =
   '521298106728-pe2ffr13271rqdkru2gu7u78cf5valda.apps.googleusercontent.com';
-const GOOGLE_CALENDAR_ID = 'MY_CALENDAR_ID';
 
 /**
  * @return {string} access token
@@ -58,8 +57,11 @@ export async function refreshEvents() {
   const todayStart = Math.floor(new Date().getTime() / DAY_IN_MS) * DAY_IN_MS;
   const inAWeekEnd = todayStart + 7 * DAY_IN_MS;
 
+  const calendarId = await fetch('./config.json')
+    .then((resp) => resp.json())
+    .then((data) => data.googleCalendarId);
   const data = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${GOOGLE_CALENDAR_ID}/events?timeMin=${new Date(todayStart).toISOString()}&timeMax=${new Date(inAWeekEnd).toISOString()}&singleEvents=true&orderBy=startTime`,
+    `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${new Date(todayStart).toISOString()}&timeMax=${new Date(inAWeekEnd).toISOString()}&singleEvents=true&orderBy=startTime`,
     {
       // mode: 'cors',
       headers: {
