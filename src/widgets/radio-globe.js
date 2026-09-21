@@ -1,5 +1,7 @@
-import * as naturalEarthCoastlines from '../webradios/ne_50m_coastline.json';
-import * as naturalEarthBoundariesLand from '../webradios/ne_50m_admin_0_boundary_lines_land.json';
+import * as naturalEarthCoastlines from '../webradios/ne_110m_coastline.json';
+import * as naturalEarthBoundariesLand from '../webradios/ne_110m_admin_0_boundary_lines_land.json';
+import * as naturalEarthCoastlinesDetailed from '../webradios/ne_50m_coastline.json';
+import * as naturalEarthBoundariesLandDetailed from '../webradios/ne_50m_admin_0_boundary_lines_land.json';
 import * as webRadios from '../webradios/webradios.json';
 import {
   DOT_MUTED,
@@ -428,7 +430,7 @@ export const radioGlobeWidget = {
       context,
       canvasWidth,
       canvasHeight,
-      naturalEarthCoastlines,
+      zoomLevel > 4.5 ? naturalEarthCoastlinesDetailed : naturalEarthCoastlines,
     );
     context.strokeStyle = getDotColor(DOT_MUTED);
     context.lineWidth = 1;
@@ -436,7 +438,9 @@ export const radioGlobeWidget = {
       context,
       canvasWidth,
       canvasHeight,
-      naturalEarthBoundariesLand,
+      zoomLevel > 4.5
+        ? naturalEarthBoundariesLandDetailed
+        : naturalEarthBoundariesLand,
     );
     context.fillStyle = getDotColor(DOT_OVERLAY);
     drawFeatureCollection(context, canvasWidth, canvasHeight, webRadios);
