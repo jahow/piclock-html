@@ -2,6 +2,7 @@ import * as SunCalc from 'suncalc';
 import {
   DOT_DAWN,
   DOT_DAY,
+  DOT_MUTED,
   DOT_NIGHT,
   DOT_OFF,
   DOT_ON,
@@ -27,7 +28,7 @@ const PADDING_DOTS = 1;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const DAYS_RENDERED = 5;
+const DAYS_RENDERED = 6;
 
 const WEEKDAY_NAMES = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 
@@ -102,15 +103,23 @@ export const daysWidget = {
         );
       }
       const dayName = WEEKDAY_NAMES[currentDate.getDay()];
+      const dayDate = `${currentDate.getDate().toString().padStart(2, '0')}.${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
       const dayNameSymbols = getSymbolsFromString(dayName);
       matrix.applySymbolChain(
         dayNameSymbols,
-        Math.min(
-          currentDotX + dayWidth - getSymbolChainWidth(dayNameSymbols) - 2,
-          Math.max(0, currentDotX),
-        ),
+        currentDotX,
         currentDotY - 6,
+        undefined,
+        i === 0 ? DOT_ON : DOT_MUTED,
       );
+      if (i === 0) {
+        const dateSymbols = getSymbolsFromString(dayDate);
+        matrix.applySymbolChain(
+          dateSymbols,
+          currentDotX + dayWidth - getSymbolChainWidth(dateSymbols) - 3,
+          currentDotY - 6,
+        );
+      }
 
       // 3 weather points per day
       this.renderDayWeather(currentDotX, currentDotY, dayWidth, i);
