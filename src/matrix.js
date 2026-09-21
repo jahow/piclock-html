@@ -297,7 +297,7 @@ class DotMatrix {
 
         // update dot transition ratio
         const ratioDelta =
-          fromValue < toValue ? (1 - ratio) * 0.25 : (1 - ratio) * 0.15;
+          fromValue < toValue ? (1 - ratio) * 0.37 : (1 - ratio) * 0.25;
         ratio += ratioDelta;
         if (ratio > 0.99) {
           ratio = 1;
