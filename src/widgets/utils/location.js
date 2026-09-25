@@ -9,9 +9,10 @@ export async function getLatitudeLongitude() {
         const longitude = position.coords.longitude;
         resolve([latitude, longitude]);
       },
-      function (error) {
-        console.error('Could not obtain location', error);
-        resolve([48.8566, 2.3522]); // Paris
+      async function (error) {
+        console.warn('Could not obtain location', error);
+        const config = await fetch('./config.json').then((resp) => resp.json());
+        resolve(config.defaultLocation);
       },
     );
   });

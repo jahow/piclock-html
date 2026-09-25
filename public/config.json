@@ -1,3 +1,4 @@
 {
-  "googleCalendarId": "GOOGLE_CALENDAR_ID"
+  "googleCalendarId": "GOOGLE_CALENDAR_ID",
+  "defaultLocation": [52.5069712, 13.2599498]
 }
