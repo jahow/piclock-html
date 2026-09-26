@@ -7,7 +7,6 @@ import {
   DOT_OFF,
   DOT_ON,
   DOT_OVERLAY,
-  DOT_SIZE_PX,
   DOT_SPACING_PX,
   getDotColor,
   getMatrix,
@@ -18,8 +17,6 @@ import { getEventsOnDate, refreshEvents } from './utils/events.js';
 import { getLatitudeLongitude } from './utils/location.js';
 import { getForecast, refreshWeatherForecast } from './utils/weather.js';
 import { getRatioOfTimeInDay } from './utils/misc.js';
-
-const HIGHTLIGHT_COLOR = getDotColor(DOT_OVERLAY);
 
 const CURRENT_DAY_WIDTH_DOTS = 48;
 const OTHER_DAY_WIDTH_DOTS = 24;
@@ -200,17 +197,21 @@ export const daysWidget = {
       baseX + dayWidth * dayAdvancementRatio,
       baseY,
     );
-    baseCoords[0] += Math.floor(DOT_SIZE_PX / 2 - DOT_SPACING_PX / 2);
+    // baseCoords[0] += Math.floor(DOT_SIZE_PX / 2 - DOT_SPACING_PX / 2);
     baseCoords[1] += Math.floor(-DOT_SPACING_PX / 2);
-    context.fillStyle = HIGHTLIGHT_COLOR;
+    context.strokeStyle = getDotColor(DOT_NIGHT);
+    context.lineWidth = 3;
+    context.setLineDash([]);
     const dayHeightPx = matrix.getPixelFromDot(DAY_HEIGHT_DOTS);
     context.beginPath();
-    context.moveTo(baseCoords[0], baseCoords[1] + dayHeightPx + 10);
-    context.lineTo(baseCoords[0] + 10, baseCoords[1] + dayHeightPx);
-    context.lineTo(baseCoords[0], baseCoords[1] + dayHeightPx - 10);
-    context.lineTo(baseCoords[0] - 10, baseCoords[1] + dayHeightPx);
+    context.moveTo(baseCoords[0], baseCoords[1] + dayHeightPx);
+    context.lineTo(baseCoords[0], baseCoords[1] + dayHeightPx + 100);
     context.closePath();
-    context.fill();
+    context.stroke();
+    context.strokeStyle = getDotColor(DOT_DAY);
+    context.setLineDash([4, 16]);
+    context.stroke();
+    context.setLineDash([]);
   },
 
   /**
@@ -270,15 +271,20 @@ export const daysWidget = {
       baseX,
       baseY + 17,
     );
-    context.font = '18px sans-serif';
+    const now = Date.now();
     for (let i = 0; i < events.length; i++) {
       const eventOriginX = eventsOrigin[0];
-      const eventOriginY = eventsOrigin[1] + 20 * i - 2;
+      const eventOriginY = eventsOrigin[1] + 20 * i - 5;
       const event = events[i];
+      const isInPast = event.end < now;
+      const isOngoing = event.end >= now && event.start <= now;
       const eventStartPx = event.startDayRatio * dayWidthPx;
       const eventEndPx = event.endDayRatio * dayWidthPx;
+      context.fillStyle = isOngoing
+        ? getDotColor(DOT_OVERLAY)
+        : getDotColor(DOT_ON);
+      context.font = '18px sans-serif';
       const titleWidthPx = context.measureText(event.title).width;
-      context.fillStyle = 'hsl(47, 84%, 82%)';
 
       if (!showEventTime) {
         context.fillText(event.title, eventOriginX, eventOriginY);
@@ -287,31 +293,60 @@ export const daysWidget = {
 
       const textOriginX = eventOriginX + eventStartPx - 14 - titleWidthPx; // text on the left of the time bar
       context.fillText(event.title, textOriginX, eventOriginY);
-      context.fillStyle = HIGHTLIGHT_COLOR;
-      context.strokeStyle = HIGHTLIGHT_COLOR;
-      context.lineWidth = 2;
+
+      context.strokeStyle = isInPast
+        ? getDotColor(DOT_DAWN)
+        : isOngoing
+          ? getDotColor(DOT_OVERLAY)
+          : getDotColor(DOT_ON);
+      context.lineWidth = 2.5;
       context.beginPath();
-      context.moveTo(eventOriginX + eventStartPx, eventOriginY - 13);
-      context.lineTo(eventOriginX + eventEndPx, eventOriginY - 13);
-      context.lineTo(eventOriginX + eventEndPx + 8, eventOriginY - 5);
-      context.lineTo(eventOriginX + eventEndPx, eventOriginY + 3);
-      context.lineTo(eventOriginX + eventStartPx, eventOriginY + 3);
-      context.lineTo(eventOriginX + eventStartPx - 8, eventOriginY - 5);
-      context.lineTo(eventOriginX + eventStartPx, eventOriginY - 13);
+      context.arc(
+        eventOriginX + eventStartPx,
+        eventOriginY - 6,
+        5,
+        0,
+        2 * Math.PI,
+      );
+      context.moveTo(eventOriginX + eventStartPx - 6, eventOriginY - 6);
+      context.lineTo(eventOriginX + eventStartPx + 6, eventOriginY - 6);
+      if (event.endDayRatio > event.startDayRatio) {
+        context.arc(
+          eventOriginX + eventEndPx,
+          eventOriginY - 6,
+          5,
+          0,
+          2 * Math.PI,
+        );
+      }
       context.closePath();
-      context.fill();
-      // context.strokeRect(
-      //   eventOriginX + eventStartPx,
-      //   eventsOrigin[1] - 18,
-      //   0,
-      //   eventOriginY - eventsOrigin[1] + 8,
-      // );
-      // context.strokeRect(
-      //   eventOriginX + eventEndPx,
-      //   eventsOrigin[1] - 18,
-      //   0,
-      //   eventOriginY - eventsOrigin[1] + 8,
-      // );
+      context.stroke();
+
+      const diffStart = event.start - now;
+      if (diffStart > 0 && diffStart < 60 * 60 * 1000) {
+        context.font = '14px monospace';
+        const minutesLeft = Math.ceil(diffStart / (60 * 1000));
+        const minutesLeftText = `${minutesLeft}mn`;
+        const minutesLeftTextWidth = context.measureText(minutesLeftText).width;
+        context.fillStyle = 'rgba(0,0,0,0.8)';
+        // context.fillStyle = 'rgba(255,255,255,0.8)';
+        context.beginPath();
+        context.roundRect(
+          eventOriginX + eventStartPx + 8,
+          eventOriginY - 14,
+          minutesLeftTextWidth + 8,
+          16,
+          4,
+        );
+        context.closePath();
+        context.fill();
+        context.fillStyle = getDotColor(DOT_OVERLAY);
+        context.fillText(
+          minutesLeftText,
+          eventOriginX + eventStartPx + 12,
+          eventOriginY - 2,
+        );
+      }
     }
   },
 
