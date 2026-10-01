@@ -25,7 +25,7 @@ const PADDING_DOTS = 1;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const DAYS_RENDERED = 6;
+const DAYS_RENDERED = 7;
 
 const WEEKDAY_NAMES = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 
@@ -55,6 +55,7 @@ async function recomputeSunriseTimes() {
 }
 
 let dragging = false;
+let dragShiftCounter = 0;
 let dragShiftPx = 0;
 
 /**
@@ -66,10 +67,13 @@ export const daysWidget = {
     refreshWeatherForecast();
     refreshEvents();
 
-    if (!dragging) {
-      dragShiftPx -= dragShiftPx * 0.3;
-      if (Math.abs(dragShiftPx) < 2) {
-        dragShiftPx = 0;
+    if (!dragging && Math.abs(dragShiftPx) > 0) {
+      dragShiftCounter = Math.max(0, dragShiftCounter - 1);
+      if (dragShiftCounter === 0) {
+        dragShiftPx -= dragShiftPx * 0.3;
+        if (Math.abs(dragShiftPx) < 2) {
+          dragShiftPx = 0;
+        }
       }
     }
 
@@ -101,22 +105,22 @@ export const daysWidget = {
       }
       const dayName = WEEKDAY_NAMES[currentDate.getDay()];
       const dayDate = `${currentDate.getDate().toString().padStart(2, '0')}.${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
-      const dayNameSymbols = getSymbolsFromString(dayName);
+      const label = i === 0 ? `${dayName} ${dayDate}` : dayName;
+      const symbols = getSymbolsFromString(label);
+      let startX = currentDotX;
+      if (i === 0) {
+        startX = Math.max(
+          startX,
+          Math.min(0, startX + dayWidth - getSymbolChainWidth(symbols) - 1),
+        );
+      }
       matrix.applySymbolChain(
-        dayNameSymbols,
-        currentDotX,
+        symbols,
+        startX,
         currentDotY - 6,
         undefined,
         i === 0 ? DOT_ON : DOT_MUTED,
       );
-      if (i === 0) {
-        const dateSymbols = getSymbolsFromString(dayDate);
-        matrix.applySymbolChain(
-          dateSymbols,
-          currentDotX + dayWidth - getSymbolChainWidth(dateSymbols) - 3,
-          currentDotY - 6,
-        );
-      }
 
       // 3 weather points per day
       this.renderDayWeather(currentDotX, currentDotY, dayWidth, i);
@@ -367,5 +371,6 @@ export const daysWidget = {
 
   pointerUp(context, x, y) {
     dragging = false;
+    dragShiftCounter = 40;
   },
 };

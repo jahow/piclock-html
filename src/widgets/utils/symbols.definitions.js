@@ -601,12 +601,12 @@ export const textSymbols = {
     ]),
     // prettier-ignore
     ' ': processSymbol([
-      '    ',
-      '    ',
-      '    ',
-      '    ',
-      '    ',
-      '    '
+      ' ',
+      ' ',
+      ' ',
+      ' ',
+      ' ',
+      ' '
     ]),
     // prettier-ignore
     '%': processSymbol([
