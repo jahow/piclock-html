@@ -6,16 +6,23 @@ import {
   getMatrix,
 } from '../matrix.js';
 import { iconSymbols } from './utils/symbols.definitions.js';
+import { getState, saveState } from './utils/save-state.js';
 
 const audioEl = /** @type {HTMLAudioElement} */ (
   document.createElement('audio')
 );
-let currentRadio = null;
+let currentRadio = getState().currentRadio;
 
 let isPlaying = false;
+if (getState().isPlaying) {
+  setPlaying(true);
+}
 
 function setPlaying(playing) {
   isPlaying = playing;
+  saveState({
+    isPlaying,
+  });
   if (playing && currentRadio && currentRadio.url_resolved) {
     audioEl.src = currentRadio.url_resolved;
     audioEl.play();
@@ -31,11 +38,18 @@ export function getIsPlaying() {
 export function setCurrentRadio(radio) {
   const urlChanged = currentRadio?.url_resolved !== radio?.url_resolved;
   currentRadio = radio;
+  saveState({
+    currentRadio,
+  });
   if (!radio || !radio.url_resolved) {
     setPlaying(false);
   } else if (urlChanged && isPlaying) {
     setPlaying(true);
   }
+}
+
+export function getCurrentRadio() {
+  return currentRadio;
 }
 
 /**

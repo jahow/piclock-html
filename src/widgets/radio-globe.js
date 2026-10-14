@@ -12,7 +12,8 @@ import {
   getMatrix,
 } from '../matrix.js';
 import { getLatitudeLongitude } from './utils/location.js';
-import { setCurrentRadio } from './radio-player.js';
+import { getCurrentRadio, setCurrentRadio } from './radio-player.js';
+import { getState, saveState } from './utils/save-state.js';
 
 let closestRadioDistance = 0;
 let closestRadio = null;
@@ -34,11 +35,28 @@ let panning = false;
 
 let defaultLon = 0;
 let defaultLat = 0;
+
+let zoomLevel = 3;
+let targetZoomLevel = zoomLevel;
+
 getLatitudeLongitude().then(([lat, lon]) => {
   centerLat = lat;
   centerLon = lon;
   defaultLon = lon;
   defaultLat = lat;
+
+  if (getState().currentRadioCoordinates) {
+    centerLat = getState().currentRadioCoordinates[0];
+    centerLon = getState().currentRadioCoordinates[1];
+    zoomLevel = getState().currentRadioZoomLevel ?? 3;
+    targetZoomLevel = zoomLevel;
+  }
+  if (getState().openedCluster) {
+    openedCluster = getState().openedCluster;
+    openedClusterAnimRatio = 1;
+    openedClusterLat = getState().openedClusterCoordinates[0];
+    openedClusterLon = getState().openedClusterCoordinates[1];
+  }
 });
 
 const tempCoord = [0, 0];
@@ -50,9 +68,6 @@ function toDeg(radius) {
   return (radius * 180) / Math.PI;
 }
 
-let zoomLevel = 3;
-let targetZoomLevel = zoomLevel;
-
 export function zoomIn() {
   targetZoomLevel = Math.min(9, targetZoomLevel + 1);
 }
@@ -63,6 +78,14 @@ export function resetView() {
   targetZoomLevel = 3;
   centerLon = defaultLon;
   centerLat = defaultLat;
+  openedCluster = null;
+  openedClusterAnimRatio = 0;
+  saveState({
+    currentRadioCoordinates: null,
+    currentRadioZoomLevel: null,
+    openedCluster: null,
+    openedClusterCoordinates: null,
+  });
 }
 
 function getRadius() {
@@ -446,16 +469,26 @@ export const radioGlobeWidget = {
     drawFeatureCollection(context, canvasWidth, canvasHeight, webRadios);
 
     if (closestRadio) {
-      if (
-        closestRadio.isCluster &&
-        closestRadio.regionCode !== openedCluster?.regionCode
-      ) {
-        openedCluster = closestRadio;
-        openedClusterAnimRatio = 0;
-        openedClusterLon = closestRadioLon;
-        openedClusterLat = closestRadioLat;
+      if (closestRadio.isCluster) {
+        if (closestRadio.regionCode !== openedCluster?.regionCode) {
+          openedCluster = closestRadio;
+          openedClusterAnimRatio = 0;
+          openedClusterLon = closestRadioLon;
+          openedClusterLat = closestRadioLat;
+          saveState({
+            openedCluster,
+            openedClusterCoordinates: [openedClusterLat, openedClusterLon],
+            currentRadioCoordinates: [centerLat, centerLon],
+            currentRadioZoomLevel: targetZoomLevel,
+          });
+        }
       } else {
-        // openedCluster = null;
+        if (getCurrentRadio() !== closestRadio) {
+          saveState({
+            currentRadioCoordinates: [centerLat, centerLon],
+            currentRadioZoomLevel: targetZoomLevel,
+          });
+        }
         setCurrentRadio(closestRadio);
       }
     }
@@ -477,6 +510,10 @@ export const radioGlobeWidget = {
       const maxDist = (ringCount + 0.5) * CLUSTER_BASE_RADIUS;
       if (distSq > maxDist * maxDist) {
         openedCluster = null;
+        saveState({
+          openedCluster: null,
+          openedClusterCoordinates: null,
+        });
       }
     }
 
