@@ -29,6 +29,8 @@ const CLUSTER_BASE_RADIUS = 40;
 
 let centerLon = 0;
 let centerLat = 0;
+let targetCenterLon = 0;
+let targetCenterLat = 0;
 let panDragLon = null;
 let panDragLat = null;
 let panning = false;
@@ -57,6 +59,9 @@ getLatitudeLongitude().then(([lat, lon]) => {
     openedClusterLat = getState().openedClusterCoordinates[0];
     openedClusterLon = getState().openedClusterCoordinates[1];
   }
+
+  targetCenterLon = centerLon;
+  targetCenterLat = centerLat;
 });
 
 const tempCoord = [0, 0];
@@ -76,8 +81,8 @@ export function zoomOut() {
 }
 export function resetView() {
   targetZoomLevel = 3;
-  centerLon = defaultLon;
-  centerLat = defaultLat;
+  targetCenterLon = defaultLon;
+  targetCenterLat = defaultLat;
   openedCluster = null;
   openedClusterAnimRatio = 0;
   saveState({
@@ -388,8 +393,10 @@ function drawFeatureCollection(context, canvasWidth, canvasHeight, collection) {
  */
 export const radioGlobeWidget = {
   render(context) {
-    // update zoom level
+    // update zoom level & coordinates
     zoomLevel += (targetZoomLevel - zoomLevel) * 0.2;
+    centerLon += (targetCenterLon - centerLon) * 0.2;
+    centerLat += (targetCenterLat - centerLat) * 0.2;
 
     const canvasWidth = context.canvas.width;
     const canvasHeight = context.canvas.height;
@@ -575,6 +582,8 @@ export const radioGlobeWidget = {
       centerLon -= 360;
     }
     centerLat = Math.min(90, Math.max(-90, centerLat));
+    targetCenterLon = centerLon;
+    targetCenterLat = centerLat;
   },
 
   pointerUp(context, x, y) {
