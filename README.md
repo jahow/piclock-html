@@ -54,3 +54,17 @@
    ```bash
    chromium --kiosk --start-maximized http://localhost/clock/index.html
    ```
+
+4. Add a desktop shortcut:
+   ```bash
+   nano ~/Desktop/piclock.desktop
+   ```
+   ```
+   [Desktop Entry]
+   Type=Application
+   Name=piclock
+   Comment=piclock
+   Icon=/usr/share/pixmaps/chromium.png
+   Exec=chromium --kiosk --start-maximized http://localhost/clock/index.html
+   Terminal=false
+   ```
