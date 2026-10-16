@@ -64,3 +64,7 @@ addWidget(
 
 // temp
 // setPage('radio');
+
+document.body.requestFullscreen({
+  navigationUI: 'hide',
+});

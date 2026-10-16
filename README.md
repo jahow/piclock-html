@@ -2,21 +2,21 @@
 
 #### On Raspberry PI
 
-1. Install nginx:
+1. Set hostname for easy connection:
+   ```bash
+   hostnamectl hostname piclock
+   ```
+
+2. Install nginx:
    ```bash
    sudo apt update
    sudo apt install nginx
    ```
 
-2. Create website folder:
+3. Create website folder:
    ```bash
    sudo mkdir -p /usr/share/nginx/html/clock
    sudo chown raspberrypi /usr/share/nginx/html/clock
-   ```
-
-3. Find out IP address:
-   ```bash
-   hostname -I
    ```
    
 4. Add user to `www-data` group:
@@ -38,7 +38,7 @@
    ```
 
 2. ```bash
-   scp -r ./dist/* raspberrypi@<IPADRESS>:/var/www/html/clock
+   scp -r ./dist/* raspberrypi@piclock:/var/www/html/clock
    ```
 
 #### On Raspberry PI again
@@ -50,7 +50,7 @@
 
 2. Follow instructions here to install a font with emojis: https://www.omgubuntu.co.uk/2016/08/enable-color-emoji-linux-google-chrome-noto
 
-2. Add this line to the `~/.config/labwc/autostart` file:
+3. Add this line to the `~/.config/labwc/autostart` file:
    ```bash
    chromium --kiosk --start-maximized http://localhost/clock/index.html
    ```

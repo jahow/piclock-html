@@ -8,9 +8,10 @@ export const DOT_DAY = /** @type {DotValue} */ (3);
 export const DOT_ON = /** @type {DotValue} */ (4);
 export const DOT_OVERLAY = /** @type {DotValue} */ (5);
 export const DOT_MUTED = /** @type {DotValue} */ (6);
+export const DOT_WARNING = /** @type {DotValue} */ (7);
 
 /**
- * @typedef {DOT_OFF|DOT_ON|DOT_NIGHT|DOT_DAY|DOT_DAWN|DOT_OVERLAY} DotValue
+ * @typedef {DOT_OFF|DOT_ON|DOT_NIGHT|DOT_DAY|DOT_DAWN|DOT_OVERLAY|DOT_WARNING} DotValue
  */
 
 /**
@@ -33,6 +34,8 @@ export function getDotColor(dotValue) {
       return 'hsl(47, 84%, 82%)';
     case DOT_OVERLAY:
       return 'hsl(148,100%,50%)';
+    case DOT_WARNING:
+      return 'hsl(14 75% 54%)';
   }
 }
 
