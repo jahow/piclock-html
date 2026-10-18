@@ -671,6 +671,14 @@ export const textSymbols = {
       ' x ',
       '   '
     ]),
+    // prettier-ignore
+    delete: processSymbol([
+      '     ',
+      ' x x ',
+      '  x  ',
+      ' x x ',
+      '     ',
+    ]),
   },
 };
 
@@ -941,6 +949,94 @@ export const veryLargeIconSymbols = {
       '             ',
       '   .     .   ',
       '    .. ..    ',
+    ]),
+  },
+};
+
+/** @type {SymbolSet} */
+export const smallDigitsSymbols = {
+  baseWidth: 3,
+  height: 5,
+  symbols: {
+    // prettier-ignore
+    0: processSymbol([
+      'xxx',
+      'x x',
+      'x x',
+      'x x',
+      'xxx',
+    ]),
+    // prettier-ignore
+    1: processSymbol([
+      '  x',
+      '  x',
+      '  x',
+      '  x',
+      '  x',
+    ]),
+    // prettier-ignore
+    2: processSymbol([
+      'xxx',
+      '  x',
+      'xxx',
+      'x  ',
+      'xxx',
+    ]),
+    // prettier-ignore
+    3: processSymbol([
+      'xxx',
+      '  x',
+      'xxx',
+      '  x',
+      'xxx',
+    ]),
+    // prettier-ignore
+    4: processSymbol([
+      'x x',
+      'x x',
+      'xxx',
+      '  x',
+      '  x',
+    ]),
+    // prettier-ignore
+    5: processSymbol([
+      'xxx',
+      'x  ',
+      'xxx',
+      '  x',
+      'xxx',
+    ]),
+    // prettier-ignore
+    6: processSymbol([
+      'xxx',
+      'x  ',
+      'xxx',
+      'x x',
+      'xxx',
+    ]),
+    // prettier-ignore
+    7: processSymbol([
+      'xxx',
+      '  x',
+      '  x',
+      '  x',
+      '  x',
+    ]),
+    // prettier-ignore
+    8: processSymbol([
+      'xxx',
+      'x x',
+      'xxx',
+      'x x',
+      'xxx',
+    ]),
+    // prettier-ignore
+    9: processSymbol([
+      'xxx',
+      'x x',
+      'xxx',
+      '  x',
+      'xxx',
     ]),
   },
 };

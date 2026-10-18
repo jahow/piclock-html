@@ -13,6 +13,7 @@ import {
 } from './widgets/radio-globe.js';
 import { getIsPlaying, radioPlayerWidget } from './widgets/radio-player.js';
 import { createRippleAnimationWidget } from './widgets/animation.js';
+import { alarmsWidget } from './widgets/alarms.js';
 
 addWidget(clockWidget);
 addWidget(daysWidget);
@@ -28,11 +29,8 @@ addWidget(
   ),
 );
 addWidget(
-  createButtonWidget(
-    getMatrix().width - 11,
-    4,
-    iconSymbols.symbols.alarm,
-    () => {},
+  createButtonWidget(getMatrix().width - 11, 4, iconSymbols.symbols.alarm, () =>
+    setPage('alarms'),
   ),
 );
 
@@ -60,6 +58,15 @@ addWidget(
     true,
   ),
   'radio',
+);
+
+// ALARMS
+addWidget(alarmsWidget, 'alarms');
+addWidget(
+  createButtonWidget(getMatrix().width - 11, 4, iconSymbols.symbols.ok, () =>
+    setPage('default'),
+  ),
+  'alarms',
 );
 
 // temp

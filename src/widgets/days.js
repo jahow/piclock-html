@@ -1,4 +1,3 @@
-import * as SunCalc from 'suncalc';
 import {
   DOT_DAWN,
   DOT_DAY,
@@ -14,9 +13,9 @@ import {
 import { getSymbolChainWidth, getSymbolsFromString } from './utils/symbols.js';
 import { weatherSymbols } from './utils/symbols.definitions.js';
 import { getEventsOnDate, refreshEvents } from './utils/events.js';
-import { getLatitudeLongitude } from './utils/location.js';
 import { getForecast, refreshWeatherForecast } from './utils/weather.js';
 import { getRatioOfTimeInDay } from './utils/misc.js';
+import { getSunriseTimes } from './utils/sunrise.js';
 
 const CURRENT_DAY_WIDTH_DOTS = 48;
 const OTHER_DAY_WIDTH_DOTS = 24;
@@ -29,31 +28,6 @@ const DAYS_RENDERED = 7;
 
 const WEEKDAY_NAMES = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 
-function getTodayTime() {
-  return Math.floor(new Date().getTime() / DAY_IN_MS) * DAY_IN_MS;
-}
-
-let currentDay = null;
-const sunriseTimes = new Array(DAYS_RENDERED);
-
-async function recomputeSunriseTimes() {
-  const todayTime = getTodayTime();
-  if (currentDay === todayTime) {
-    return;
-  }
-
-  currentDay = todayTime;
-  const latLon = await getLatitudeLongitude();
-
-  for (let i = 0; i < DAYS_RENDERED; i++) {
-    sunriseTimes[i] = SunCalc.getTimes(
-      currentDay + DAY_IN_MS * 0.5 + i * DAY_IN_MS,
-      latLon[0],
-      latLon[1],
-    );
-  }
-}
-
 let dragging = false;
 let dragShiftCounter = 0;
 let dragShiftPx = 0;
@@ -63,7 +37,6 @@ let dragShiftPx = 0;
  */
 export const daysWidget = {
   render(context) {
-    recomputeSunriseTimes();
     refreshWeatherForecast();
     refreshEvents();
 
@@ -93,14 +66,13 @@ export const daysWidget = {
       const currentDate = new Date(today.getTime() + i * DAY_IN_MS);
 
       const dayWidth = i === 0 ? CURRENT_DAY_WIDTH_DOTS : OTHER_DAY_WIDTH_DOTS;
-      if (sunriseTimes[i]) {
+      if (getSunriseTimes()) {
         this.renderDayBlock(
           currentDotX,
           currentDotY,
           dayWidth,
           context,
           i === 0 ? ratioDayAdvancement : -1,
-          sunriseTimes[i],
         );
       }
       const dayName = WEEKDAY_NAMES[currentDate.getDay()];
@@ -146,17 +118,10 @@ export const daysWidget = {
    * @param {number} dayWidth
    * @param {CanvasRenderingContext2D} context
    * @param {number} dayAdvancementRatio
-   * @param {Object} sunriseTimes
    */
-  renderDayBlock(
-    baseX,
-    baseY,
-    dayWidth,
-    context,
-    dayAdvancementRatio,
-    sunriseTimes,
-  ) {
+  renderDayBlock(baseX, baseY, dayWidth, context, dayAdvancementRatio) {
     const matrix = getMatrix();
+    const sunriseTimes = getSunriseTimes();
 
     const nightEndRow = Math.round(
       dayWidth * getRatioOfTimeInDay(sunriseTimes.nightEnd),

@@ -1,6 +1,20 @@
 import { textSymbols } from './symbols.definitions.js';
 
 /**
+ * Extracts symbol from a given character.
+ * @param {string} text 1 char length string
+ * @returns {Symbol} A set of symbols built from the string.
+ */
+export function getSymbolFromString(text) {
+  const char = text[0].toUpperCase();
+  if (textSymbols.symbols[char]) {
+    return textSymbols.symbols[char];
+  } else {
+    return textSymbols.symbols['?'];
+  }
+}
+
+/**
  * Extracts all unique symbols from a given string.
  * @param {string} text
  * @returns {Symbol[]} A set of symbols built from the string.
