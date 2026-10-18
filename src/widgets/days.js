@@ -284,9 +284,12 @@ export const daysWidget = {
       const isOngoing = event.end >= now && event.start <= now;
       const eventStartPx = event.startDayRatio * dayWidthPx;
       const eventEndPx = event.endDayRatio * dayWidthPx;
-      context.fillStyle = isOngoing
-        ? getDotColor(DOT_OVERLAY)
-        : getDotColor(DOT_ON);
+      context.fillStyle = isInPast
+        ? getDotColor(DOT_DAWN)
+        : isOngoing
+          ? getDotColor(DOT_OVERLAY)
+          : getDotColor(DOT_ON);
+      context.strokeStyle = context.fillStyle;
       context.font = '18px sans-serif';
       const titleWidthPx = context.measureText(event.title).width;
 
@@ -298,11 +301,6 @@ export const daysWidget = {
       const textOriginX = eventOriginX + eventStartPx - 14 - titleWidthPx; // text on the left of the time bar
       context.fillText(event.title, textOriginX, eventOriginY);
 
-      context.strokeStyle = isInPast
-        ? getDotColor(DOT_DAWN)
-        : isOngoing
-          ? getDotColor(DOT_OVERLAY)
-          : getDotColor(DOT_ON);
       context.lineWidth = 2.5;
       context.beginPath();
       context.arc(
