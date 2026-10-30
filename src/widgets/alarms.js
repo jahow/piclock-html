@@ -1,41 +1,46 @@
 import {
   DOT_DAWN,
   DOT_DAY,
+  DOT_MUTED,
   DOT_NIGHT,
   DOT_ON,
-  DOT_WARNING,
+  DOT_OVERLAY,
   getMatrix,
 } from '../matrix.js';
 import { getRatioOfTimeInDay } from './utils/misc.js';
 import { getSunriseTimes } from './utils/sunrise.js';
-import { getSymbolFromString } from './utils/symbols.js';
-import { textSymbols } from './utils/symbols.definitions.js';
+import { getSymbolFromString, getSymbolsFromString } from './utils/symbols.js';
+import { smallDigitsSymbols } from './utils/symbols.definitions.js';
+import { getState, saveState } from './utils/save-state.js';
 
-const DAY_HEIGHT_DOTS = 33;
+const DAY_HEIGHT_DOTS = 38;
 const DAY_WIDTH_DOTS = 7;
 const PADDING_DOTS = 2;
 
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-const DAYS_RENDERED = 7;
-
 const DAY_LETTERS = ['l', 'm', 'm', 'j', 'v', 's', 'd'];
 
-function getTodayTime() {
-  return Math.floor(new Date().getTime() / DAY_IN_MS) * DAY_IN_MS;
-}
-
 let dragging = false;
-let dragShiftCounter = 0;
-let dragShiftPx = 0;
+let draggingStartHeight = 0;
+let draggingDayIndex = -1;
+
+/**
+ * @type {Array<null | [number, number, boolean]>}
+ */
+const alarmTimes = getState().alarmTimes ?? [
+  null,
+  [10, 34, true],
+  null,
+  null,
+  null,
+  null,
+  [18, 34, true],
+];
 
 /**
  * @type {Widget}
  */
 export const alarmsWidget = {
   render(context) {
-    const matrix = getMatrix();
-
     if (!getSunriseTimes()) {
       return;
     }
@@ -46,6 +51,7 @@ export const alarmsWidget = {
         8,
         context,
         getSymbolFromString(DAY_LETTERS[i]),
+        alarmTimes[i],
       );
     }
   },
@@ -55,8 +61,9 @@ export const alarmsWidget = {
    * @param {number} baseY
    * @param {CanvasRenderingContext2D} context
    * @param {Symbol} symbol
+   * @param {null | [number, number, boolean]} alarmTime
    */
-  renderDayBlock(baseX, baseY, context, symbol) {
+  renderDayBlock(baseX, baseY, context, symbol, alarmTime = null) {
     const matrix = getMatrix();
     const sunriseTimes = getSunriseTimes();
 
@@ -73,6 +80,14 @@ export const alarmsWidget = {
       DAY_HEIGHT_DOTS * getRatioOfTimeInDay(sunriseTimes.sunset),
     );
 
+    let alarmTimeRow = -1;
+    const alarmTimeEnabled = alarmTime && alarmTime[2] === true;
+    if (alarmTime) {
+      const [hour, minute] = alarmTime;
+      const alarmTimeRatio = (hour * 60 + minute) / (24 * 60);
+      alarmTimeRow = Math.floor(DAY_HEIGHT_DOTS * alarmTimeRatio);
+    }
+
     for (let i = 0; i < DAY_WIDTH_DOTS; i++) {
       for (let j = 0; j < DAY_HEIGHT_DOTS; j++) {
         if (
@@ -84,7 +99,12 @@ export const alarmsWidget = {
           continue; // skip corners
         }
         let dotValue = DOT_DAY;
-        if (j <= nightEndRow || j >= nightStartRow) {
+
+        if (alarmTimeRow === j && alarmTimeEnabled) {
+          dotValue = DOT_OVERLAY;
+        } else if (alarmTimeRow === j && !alarmTimeEnabled && i % 6 === 0) {
+          dotValue = DOT_OVERLAY;
+        } else if (j <= nightEndRow || j >= nightStartRow) {
           dotValue = DOT_NIGHT;
         } else if (j <= sunriseRow || j >= sunsetRow) {
           dotValue = DOT_DAWN;
@@ -93,27 +113,109 @@ export const alarmsWidget = {
       }
     }
 
+    if (alarmTime && alarmTimeEnabled) {
+      const [hour, minute, enabled] = alarmTime;
+      const hourString = hour.toString().padStart(2, '0');
+      const minuteString = minute.toString().padStart(2, '0');
+      const above = DAY_HEIGHT_DOTS - alarmTimeRow < 14;
+      matrix.applySymbolChain(
+        getSymbolsFromString(hourString, smallDigitsSymbols),
+        baseX,
+        baseY + alarmTimeRow + 2 - (above ? 14 : 0),
+        false,
+        DOT_ON,
+      );
+      matrix.applySymbolChain(
+        getSymbolsFromString(minuteString, smallDigitsSymbols),
+        baseX,
+        baseY + alarmTimeRow + 8 - (above ? 14 : 0),
+        false,
+        DOT_ON,
+      );
+    }
+
     // day name
     matrix.applySymbol(
       symbol,
       baseX + Math.floor(DAY_WIDTH_DOTS / 2 - symbol.width / 2),
       baseY - 6,
       false,
-      DOT_ON,
+      alarmTime && alarmTimeEnabled ? DOT_ON : DOT_MUTED,
     );
 
-    matrix.applySymbol(
-      textSymbols.symbols.delete,
-      baseX + 1,
-      baseY + 1 + DAY_HEIGHT_DOTS,
-      false,
-      DOT_WARNING,
-    );
+    // matrix.applySymbol(
+    //   textSymbols.symbols.delete,
+    //   baseX + 1,
+    //   baseY + 1 + DAY_HEIGHT_DOTS,
+    //   false,
+    //   DOT_WARNING,
+    // );
   },
 
-  pointerDown(context, x, y) {},
+  setNewAlarmTime(pointerY) {
+    const matrix = getMatrix();
+    const baseY = 8;
+    let newRatio =
+      (pointerY - matrix.getPixelFromDot(baseY)) /
+      matrix.getPixelFromDot(DAY_HEIGHT_DOTS);
+    newRatio = Math.max(0, Math.min(0.9999, newRatio));
+    const newHour = Math.floor(newRatio * 24);
+    const newMinute = Math.floor(((newRatio * 24 - newHour) * 60) / 5) * 5;
+    alarmTimes[draggingDayIndex] = [newHour, newMinute, true];
+  },
 
-  pointerMove(context, x, y, prevX, prevY) {},
+  pointerDown(context, x, y) {
+    const matrix = getMatrix();
 
-  pointerUp(context, x, y) {},
+    for (let i = 0; i < 7; i++) {
+      const baseX = 4 + i * (DAY_WIDTH_DOTS + PADDING_DOTS);
+      const baseY = 8;
+
+      // toggle btn check
+      const alarmTime = alarmTimes[i];
+      if (
+        alarmTime &&
+        matrix.hitTestDot(context, x, y, baseX + 1, baseY - 6, 6, 6)
+      ) {
+        alarmTimes[i][2] = !alarmTimes[i][2];
+        saveState({
+          alarmTimes,
+        });
+        return;
+      }
+
+      // drag alarm time check
+      if (
+        matrix.hitTestDot(
+          context,
+          x,
+          y,
+          baseX,
+          baseY,
+          DAY_WIDTH_DOTS,
+          DAY_HEIGHT_DOTS,
+        )
+      ) {
+        dragging = true;
+        //draggingStartHeight = (alarmTimes[i][0] * DAY_HEIGHT_DOTS) / 24;
+        draggingDayIndex = i;
+        this.setNewAlarmTime(y);
+        return;
+      }
+    }
+  },
+
+  pointerMove(context, x, y, prevX, prevY) {
+    if (!dragging) {
+      return;
+    }
+    this.setNewAlarmTime(y);
+  },
+
+  pointerUp(context, x, y) {
+    dragging = false;
+    saveState({
+      alarmTimes,
+    });
+  },
 };

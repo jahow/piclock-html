@@ -17,16 +17,17 @@ export function getSymbolFromString(text) {
 /**
  * Extracts all unique symbols from a given string.
  * @param {string} text
+ * @param {SymbolSet} [symbolSet]
  * @returns {Symbol[]} A set of symbols built from the string.
  */
-export function getSymbolsFromString(text) {
+export function getSymbolsFromString(text, symbolSet = textSymbols) {
   const symbols = [];
   for (let i = 0; i < text.length; i++) {
     const char = text[i].toUpperCase();
-    if (textSymbols.symbols[char]) {
-      symbols.push(textSymbols.symbols[char]);
+    if (symbolSet.symbols[char]) {
+      symbols.push(symbolSet.symbols[char]);
     } else {
-      symbols.push(textSymbols.symbols['?']);
+      symbols.push(symbolSet.symbols['?']);
     }
   }
   return symbols;
