@@ -9,6 +9,7 @@ const url =
 async function writeGeoJSON() {
   const json = await fetch(url).then((resp) => resp.json());
   let skipped = 0;
+  let inClusters = 0;
 
   const countByRegion = {};
   function getOffsetCoords(lon, lat, existingCount) {
@@ -49,6 +50,7 @@ async function writeGeoJSON() {
 
         properties.regionCode = regionCode;
         properties.indexInRegion = existingCount;
+        inClusters++;
 
         if (region) {
           geometry = {
@@ -73,24 +75,56 @@ async function writeGeoJSON() {
     .filter((feature) => !!feature);
 
   // add a cluster for each region
-  for (const key in countByRegion) {
-    const value = countByRegion[key];
-    // if (value <= 1) continue;
-    const region = REGIONS[key];
+  for (const regionCode in countByRegion) {
+    const value = countByRegion[regionCode];
+
+    if (value === 1) {
+      // we need to make sure this single station is not in a cluster
+      for (const feature of features) {
+        if (feature.properties.regionCode === regionCode) {
+          delete feature.properties.regionCode;
+          delete feature.properties.indexInRegion;
+          inClusters--;
+          console.log(
+            `found cluster with a single station (region ${regionCode}), removed it`,
+          );
+          break;
+        }
+      }
+      continue;
+    }
+
+    const region = REGIONS[regionCode];
     features.push({
       type: 'Feature',
       geometry: {
         type: 'Point',
         coordinates: [region.lng, region.lat],
       },
-      id: `region-${key}`,
+      id: `region-${regionCode}`,
       properties: {
-        regionCode: key,
+        regionCode: regionCode,
         isCluster: true,
         radioCount: value,
       },
     });
-    console.log(`registered cluster for region ${key} with ${value} stations`);
+
+    // sort stations in the cluster by alphabetical order, reassign their indices
+    const featuresInCluster = features.filter(
+      (feature) =>
+        feature.properties.regionCode === regionCode &&
+        !feature.properties.isCluster,
+    );
+    featuresInCluster.sort((a, b) =>
+      a.properties.name.localeCompare(b.properties.name),
+    );
+    featuresInCluster.forEach((feature, index) => {
+      feature.properties.indexInRegion = index;
+    });
+
+    console.log(
+      `registered cluster for region ${regionCode} with ${value} stations`,
+    );
   }
 
   const geojson = {
@@ -102,7 +136,7 @@ async function writeGeoJSON() {
     JSON.stringify(geojson),
   );
   console.log(
-    `Scraped ${features.length} radios, skipped ${skipped} that could not be located`,
+    `Scraped ${features.length} radios, ${inClusters} of which in regional clusters, skipped ${skipped} that could not be located`,
   );
 }
 
