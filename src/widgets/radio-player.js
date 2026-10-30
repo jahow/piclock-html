@@ -34,6 +34,12 @@ function setPlaying(playing) {
 export function getIsPlaying() {
   return isPlaying;
 }
+export function play() {
+  setPlaying(true);
+}
+export function stop() {
+  setPlaying(false);
+}
 
 export function setCurrentRadio(radio) {
   const urlChanged = currentRadio?.url_resolved !== radio?.url_resolved;

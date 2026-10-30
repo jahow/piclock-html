@@ -12,6 +12,7 @@ import { getSunriseTimes } from './utils/sunrise.js';
 import { getSymbolFromString, getSymbolsFromString } from './utils/symbols.js';
 import { smallDigitsSymbols } from './utils/symbols.definitions.js';
 import { getState, saveState } from './utils/save-state.js';
+import { getIsPlaying, play, stop } from './radio-player.js';
 
 const DAY_HEIGHT_DOTS = 38;
 const DAY_WIDTH_DOTS = 7;
@@ -23,24 +24,38 @@ let dragging = false;
 let draggingStartHeight = 0;
 let draggingDayIndex = -1;
 
+let checkHours = -1;
+let checkMinutes = -1;
+
 /**
  * @type {Array<null | [number, number, boolean]>}
  */
 const alarmTimes = getState().alarmTimes ?? [
   null,
-  [10, 34, true],
   null,
   null,
   null,
   null,
-  [18, 34, true],
+  null,
+  null,
 ];
+
+let alarmStopTime = getState().alarmStopTime ?? -1;
+function playAlarm() {
+  play();
+  alarmStopTime = Date.now() + 60 + 60 * 1000; // stop after 1 hour
+  saveState({
+    alarmStopTime,
+  });
+}
 
 /**
  * @type {Widget}
  */
 export const alarmsWidget = {
   render(context) {
+    this.checkAlarmShouldPlay();
+
     if (!getSunriseTimes()) {
       return;
     }
@@ -53,6 +68,46 @@ export const alarmsWidget = {
         getSymbolFromString(DAY_LETTERS[i]),
         alarmTimes[i],
       );
+    }
+  },
+
+  checkAlarmShouldPlay() {
+    // an alarm is playing
+    if (alarmStopTime > 0) {
+      // the radio has been stopped elsewhere; clear the timeout
+      if (!getIsPlaying()) {
+        alarmStopTime = -1;
+        saveState({
+          alarmStopTime,
+        });
+        return;
+      }
+
+      if (Date.now() > alarmStopTime) {
+        stop();
+        alarmStopTime = -1;
+        saveState({
+          alarmStopTime,
+        });
+      }
+      return;
+    }
+    const now = new Date();
+    if (now.getHours() === checkHours && now.getMinutes() === checkMinutes) {
+      return;
+    }
+    checkHours = now.getHours();
+    checkMinutes = now.getMinutes();
+    const dayIndex = (now.getDay() + 6) % 7; // convert to Monday=0, Sunday=6
+    const alarmTime = alarmTimes[dayIndex];
+
+    if (
+      alarmTime &&
+      alarmTime[2] === true &&
+      alarmTime[0] === checkHours &&
+      alarmTime[1] === checkMinutes
+    ) {
+      playAlarm();
     }
   },
 
